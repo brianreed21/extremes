@@ -2,7 +2,7 @@ library(reshape);library(gridExtra);library(stargazer);library(ggplot2);library(
 library(lfe);library(R.utils);library(dplyr);library(caTools);library(tidyr);library(DescTools)
 
 setwd("~/Documents/supplyChain")
-data <- read.csv("data/compustatWithHQ_all.csv")
+data <- read.csv("data/compustat_supplierWeather.csv")
 naics <- read.csv("data/compustatNAICS.csv") %>% select(gvkey, naics) %>% unique()
 data  <- data %>% merge(naics,method = "outer")
 
@@ -14,26 +14,22 @@ dim(data)
 data = data[complete.cases(data$revenueChange) & complete.cases(data$incomeChange) & complete.cases(data$costChange) & complete.cases(data$inventoryChange),]
 
 data = data %>% mutate(revenueChange = Winsorize(revenueChange, probs = c(0.01, 0.99)),
-                             incomeChange  = Winsorize(incomeChange, probs = c(0.01, 0.99)),
-                             costChange    = Winsorize(costChange, probs = c(0.01, 0.99)),
-                             inventoryChange = Winsorize(inventoryChange, probs = c(0.01, 0.98)),
+                       incomeChange  = Winsorize(incomeChange, probs = c(0.01, 0.99)),
+                       costChange    = Winsorize(costChange, probs = c(0.01, 0.99)),
+                       inventoryChange = Winsorize(inventoryChange, probs = c(0.01, 0.98)),
                        naics2 = substr(naics,0,2)) %>% filter(naics2 != "52")
 
 
 ########################################################################################################################
 
-summary(lm(revenueChange ~ precipQuartOverall + tmaxQuartOverall  + factor(fquarter) + factor(naics), data = data))
-summary(lm(revenueChange ~ precipQuartState + tmaxQuartState  + factor(fquarter) + factor(naics), data = data))
-summary(lm(revenueChange ~ precipQuartStateMonth  + tmaxQuartStateMonth + factor(fquarter) + factor(naics), data = data))
+summary(lm(revenueChange ~ precipQuartOverall + supplier_precipQuartOverall + tmaxQuartOverall   + supplier_tmaxQuartOverall +  factor(fquarter)  +  factor(naics), data = data))
+summary(lm(revenueChange ~ tmaxQuartOverall   + supplier_tmaxQuartOverall    +  factor(fquarter)  +  factor(naics), data = data))
 
-summary(lm(costChange ~ precipQuartOverall + tmaxQuartOverall  + factor(fquarter) + factor(naics), data = data))
-summary(lm(costChange ~ precipQuartState + tmaxQuartState  + factor(fquarter) + factor(naics), data = data))
-summary(lm(costChange ~ precipQuartStateMonth  + tmaxQuartStateMonth + factor(fquarter) + factor(naics), data = data))
+summary(lm(costChange ~ precipQuartOverall + supplier_precipQuartOverall  +  factor(fquarter)  +  factor(naics), data = data))
+summary(lm(costChange ~ tmaxQuartOverall + supplier_tmaxQuartOverall    +  factor(fquarter)  +  factor(naics), data = data))
 
-summary(lm(inventoryChange ~ precipQuartOverall + tmaxQuartOverall  + factor(fquarter) + factor(naics), data = data))
-summary(lm(inventoryChange ~ precipQuartState + tmaxQuartState  + factor(fquarter) + factor(naics), data = data))
-summary(lm(inventoryChange ~ precipQuartStateMonth  + tmaxQuartStateMonth + factor(fquarter) + factor(naics), data = data))
-
+summary(lm(inventoryChange ~ precipQuartOverall + supplier_precipQuartOverall +  factor(fquarter)  +  factor(naics), data = data))
+summary(lm(inventoryChange ~ tmaxQuartOverall + supplier_tmaxQuartOverall  +  factor(fquarter)  +  factor(naics), data = data))
 
 
 summarise(precipQuartOverall    = sum(precipQuartOverall),
@@ -69,5 +65,5 @@ for (ind in data %>% pull(naics2) %>% unique() %>% sort()){
   }
   
 }
-  
+
 
