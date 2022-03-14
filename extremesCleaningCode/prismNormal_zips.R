@@ -89,10 +89,10 @@ allData = data.frame(matrix(ncol = 10, nrow = 0))
 for (year in seq(1900,1929)){
   print(year)
   
-  filenamePrecip = paste0("../../../../../../../Volumes/backup2/dissData/prism/zipPrecip",year,"_Normals.csv")
+  filenamePrecip = paste0("../../../../../../../Volumes/backup2/dissData/prism/zipcodePrecip",year,"_Normals.csv")
   precip = read.csv(filenamePrecip) %>% dplyr::select(-c('variable','X'))
   # 
-  filenameTemp = paste0("../../../../../../../Volumes/backup2/dissData/prism/zipTmax",year,"_Normals.csv")
+  filenameTemp = paste0("../../../../../../../Volumes/backup2/dissData/prism/zipcodeTmax",year,"_Normals.csv")
   temp = read.csv(filenameTemp) %>% dplyr::select(-c('variable','X'))
   
   

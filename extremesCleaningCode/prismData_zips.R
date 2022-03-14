@@ -1,6 +1,11 @@
 library(tidyr);library(tidyverse);library(rgdal); library(dplyr)
 library(prism);library(raster);library(ggplot2);library(dplyr);library(raster);library(sp)
 
+
+##########################
+
+
+
 ##########################
 # get the hq data and make it a spatial points dataframe
 
@@ -16,7 +21,7 @@ prism_set_dl_dir("~/Documents/supplyChain/data/prism/prism_precip")
 
 #####################
 # now get the precip and temperature data for each z
-for (year in seq(2010,2019)){
+for (year in seq(1981,2009)){
   
   
   # first do this for precipitation data
@@ -24,8 +29,7 @@ for (year in seq(2010,2019)){
   # setwd("../../../../../../../Volumes/backup2")
   ptm <- proc.time()
   
-  # prism_set_dl_dir("../../../../../../../Volumes/backup2/dissData/prism/prism_precip/")
-  prism_set_dl_dir("../../../../../../../Volumes/backup2/dissData/prism/prismNormals/prism_precip/") # firstPd/")
+  prism_set_dl_dir("../../../../../../../Volumes/backup2/dissData/prism/prism_precip/")
   precip = prism_archive_ls()[grepl(paste0("_",year),prism_archive_ls())]
   
   # get a raster stack of all the climate data
@@ -73,31 +77,36 @@ for (year in seq(2010,2019)){
 
 
 ######################################################################
-allData = data.frame(matrix(ncol = 10, nrow = 0))
+allData = data.frame(matrix(ncol = 3, nrow = 0))
+precip = c()
 
+for (year in seq(1981,2009)){
 
-for (year in seq(2010,2019)){
   print(year)
   
+  
   filenamePrecip = paste0("../../../../../../../Volumes/backup2/dissData/prism/zipcodePrecip",year,".csv")
-  precip = read.csv(filenamePrecip) %>% dplyr::select(-c('X'))
+  precip = read.csv(filenamePrecip) %>% dplyr::select(-c('X')) %>% dplyr::select('ZIP','date','precipitation')
+  # write.csv(precip,"../../../../../../../Volumes/backup2/dissData/prism/precipTest.csv")
   
   
   # 
-  filenameTemp = paste0("../../../../../../../Volumes/backup2/dissData/prism/zipcodeTmax",year,".csv")
-  temp = read.csv(filenameTemp) %>% dplyr::select(-c('X'))
+  # filenameTemp = paste0("../../../../../../../Volumes/backup2/dissData/prism/zipcodeTmax",year,".csv")
+  # temp = read.csv(filenameTemp) %>% dplyr::select(-c('X'))
+  # 
+  # 
+  # allOneYear = merge(precip,temp) 
+  # 
   
   
-  allOneYear = merge(precip,temp) 
-  
-  allData = rbind(allData,allOneYear)
+  allData = rbind(allData,precip)
 }
 
-write.csv(allData,"../../../../../../../Volumes/backup2/dissData/prism/allWeather_zips_baseline.csv")
+write.csv(allData,"../../../../../../../Volumes/backup2/dissData/prism/allWeather_precip_1981.2009.csv")
 
 
 ######################################################################
-allData = read.csv("../../../../../../../Volumes/backup2/dissData/prism/allWeather.csv")
+allData = read.csv("../../../../../../../Volumes/backup2/dissData/prism/zip_allWeather_Normals.csv")
 quantile(allData$ppt, c(0.95),na.rm = TRUE) 
 quantile(allData$tmax, c(0.95),na.rm = TRUE) 
 
