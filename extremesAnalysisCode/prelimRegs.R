@@ -1,5 +1,7 @@
 library(reshape);library(gridExtra);library(stargazer);library(ggplot2);library(gdata);library(polyclip);library(maptools);library(plyr);library(ggmap);library(sp);library(raster);library(rgdal);library(maps);library(rworldmap);library(scales);library(ggplot2);library(ggrepel);library(xtable);library(plm);library(lmtest)
 library(lfe);library(R.utils);library(dplyr);library(caTools);library(tidyr);library(DescTools)
+library(plm); library(sandwich); library(lmtest)
+
 ########################################################################################################################
 
 
@@ -16,22 +18,95 @@ head(data)
 
 ########################################################################################################################
 # clean the data and remove any financial firms
-data = data[complete.cases(data$revenueChange)  & complete.cases(data$costChange) & complete.cases(data$inventoryChange),] # & complete.cases(data$incomeChange)
+data = data[complete.cases(data$revenueChange) & complete.cases(data$costChange),] # & complete.cases(data$incomeChange)
 
-data = data %>% mutate(revenueChange = Winsorize(revenueChange, probs = c(0.01, 0.99)),
+dim(data)
+
+goodsData = data %>% mutate(revenueChange = Winsorize(revenueChange, probs = c(0.01, 0.99)),
                              # incomeChange  = Winsorize(incomeChange, probs = c(0.01, 0.99)),
                              costChange    = Winsorize(costChange, probs = c(0.01, 0.99)),
-                             inventoryChange = Winsorize(inventoryChange, probs = c(0.01, 0.98)),
+                             # inventoryChange = Winsorize(inventoryChange, probs = c(0.01, 0.98)),
                        yearQtr = paste0(year,"_",qtr),
-                       naics2 = substr(naics,1,2), zip2 = substr(zipcode,1,2)) %>% filter(naics2 %in% c('11','21','22','23','31','32','33','42','44','45','48','49')) #  %>% filter(naics2 != "52")      #  
+                       firmQtr = paste0(gvkey,qtr),
+                       naics2 = substr(naics,1,2), zip2 = substr(zipcode,1,2),
+                       hotTier = ntile(quarterly_avg_temp,3), wetTier = ntile(quarterly_avg_precip,3),
+                       variedWet = ntile(quarterly_variance_precip,3), variedHot = ntile(quarterly_variance_temp,3),
+                       roaTier = ntile(roa, 3), ageTier = ntile(earliestYear, 3), profitTier = ntile(netIncome,3),
+                       extremeTempsZip  = temp_zipquant_0.95 + temp_zipquant_1.0,
+                       extremePrecipZip = precip_zipquant_0.95 + precip_zipquant_1.0) %>% 
+                filter(!(famafrench %in% c('6','7','8','11','32','33','34','43','44','45','46','47','48'))) %>% unique()
 
+write.csv(goodsData,"extremes/goodsData.csv")
 
+dim(goodsData)
+goodsData = pdata.frame(goodsData, index = c('gvkey','yearQtr'))
 
 #######################################################################################################################
-revChange <- 
-summary(lm(revenueChange ~ precip_quant_1.0  +  tmax_quant_1.0 + factor(naics2) + factor(gvkey) + factor(zipcode) + factor(yearQtr), data = data))
+summary(lm(revenueChange ~ precip_annualquant_1.0 + temp_annualquant_1.0 +
+      factor(famafrench) + factor(firmQtr) + factor(zipcode), data = goodsData))
+
+model_robust_stata <- coeftest(model, 
+                                vcov = vcovHC,
+                                type = "HC1", 
+                               cluster = 'gvkey')
+
+model_robust_stata
 
 
+plm(revenueChange ~ precip_zipquant_1.0 + temp_zipquant_1.0 +
+      factor(hotTier) + factor(wetTier) + variedHot + variedWet +
+      factor(roaTier) + factor(ageTier) + factor(profitTier) + 
+      factor(famafrench) + factor(yearQtr), data = goodsData, inde)
+
+
+
+summary(lm(revenueChange ~ precip_zipquant_1.0 + temp_zipquant_1.0 +
+                factor(hotTier) + factor(wetTier) + variedHot + variedWet +
+                factor(roaTier) + factor(ageTier) + factor(profitTier) + 
+                factor(famafrench) + factor(yearQtr), data = goodsData ))
+
+summary(lm(revenueChange ~ precip_monthlyquant_1.0 + temp_monthlyquant_1.0 + 
+             factor(hotTier) + factor(wetTier) + variedHot + variedWet +
+             factor(roaTier) + factor(ageTier) + factor(profitTier) + 
+             factor(famafrench)  + factor(yearQtr), data = goodsData )) #  + factor(gvkey)
+
+summary(lm(revenueChange ~ precip_annualquant_1.0 + temp_annualquant_1.0 + 
+             factor(hotTier) + factor(wetTier) + 
+             factor(roaTier) + factor(ageTier) + factor(profitTier) + 
+             factor(famafrench)  + factor(yearQtr), data = goodsData ))
+
+
+industries = unique(goodsData %>% pull(famafrench))
+
+for (ind in industries){
+  print(ind)
+  print('*************************')
+  print(summary(lm(revenueChange ~ temp_annualquant_1.0 + precip_annualquant_1.0 + 
+               # factor(hotTier) + factor(wetTier) + variedHot + variedWet +
+               # factor(roaTier) + factor(ageTier) + factor(profitTier) + 
+               factor(yearQtr) + factor(gvkey) + factor(zipcode), 
+             data = goodsData[goodsData$famafrench == ind,] ))) 
+  
+}
+  
+  
+
+  
+  
+
+
+summary(lm(costChange ~ precip_monthlyquant_1.0 + temp_monthlyquant_1.0 + factor(hotTier) + factor(wetTier) +
+             factor(roaTier) + factor(ageTier) + factor(profitTier) + 
+             factor(famafrench) + factor(yearQtr) + factor(gvkey), data = data ))
+
+
+
+
+summary(lm(costChange ~ temp_annualquant_1.0 + precip_annualquant_1.0 + factor(hotTier) + factor(wetTier) +
+             factor(roaTier) + factor(ageTier) + factor(profitTier) + 
+             factor(famafrench) + factor(yearQtr), data = data ))
+
++ factor(gvkey)
 
 
 grep("*_quant_*", capture.output(revChange), value = TRUE)
