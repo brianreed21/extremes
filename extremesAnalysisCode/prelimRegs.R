@@ -1,49 +1,129 @@
 library(reshape);library(gridExtra);library(stargazer);library(ggplot2);library(gdata);library(polyclip);library(maptools);library(plyr);library(ggmap);library(sp);library(raster);library(rgdal);library(maps);library(rworldmap);library(scales);library(ggplot2);library(ggrepel);library(xtable);library(plm);library(lmtest)
 library(lfe);library(R.utils);library(dplyr);library(caTools);library(tidyr);library(DescTools)
-library(plm); library(sandwich); library(lmtest)
+library(plm); library(sandwich); library(lmtest); library(fastDummies)
 
 ########################################################################################################################
 
 
 setwd("~/Documents/supplyChain")
-data <- read.csv("data/companyData/allCompaniesWithWeather.csv") %>% select(-X) 
-data <- read.csv("data/companyData/suppliersWithWeather.csv") %>% select(-X) 
-data <- read.csv("data/companyData/customersWithWeather.csv") %>% select(-X) 
-data <- read.csv("data/companyData/largestSuppliersWithWeather.csv") %>% select(-X)  
-data <- read.csv("data/companyData/wtdAvgSuppliers.csv") %>% select(-X)  
+cstatData               <- read.csv("data/companyData/cstatWithWeather.csv") %>% select(-X) 
+allCompaniesWithWeather <- read.csv("data/companyData/allCompaniesWithWeather.csv") %>% select(-X) 
 
-dim(data)
+suppliersWithWeather <- read.csv("data/companyData/suppliersWithWeather.csv") %>% select(-X) 
+customersWithWeather <- read.csv("data/companyData/customersWithWeather.csv") %>% select(-X) 
+
+
+largestSuppliers <- read.csv("data/companyData/largestSuppliersWithWeather.csv") %>% select(-X)  
+# data <- read.csv("data/companyData/wtdAvgSuppliers.csv") %>% select(-X)  
+
+largestSuppliers = unique(largestSuppliers$gvkey)
+
+suppliersWithWeather = suppliersWithWeather %>% filter(gvkey %in% largestSuppliers)
+
+igData                  <- read.csv("data/companyData/igWithWeather.csv") %>% select(-X) 
+data <- igData 
+# suppliersWithWeather
+
+# dim(cstatData)
 head(data)
+
 
 
 ########################################################################################################################
 # clean the data and remove any financial firms
-data = data[complete.cases(data$revenueChange) & complete.cases(data$costChange),] # & complete.cases(data$incomeChange)
+
+dim(data)
+# data = data[complete.cases(data$employeesAtLocation) & data$employeesAtLocation > 0.5,]
+# dim(data)
+
+data = data[complete.cases(data$revenueChange) & complete.cases(data$costChange) & complete.cases(data$assets) & # complete.cases(data$incomeChange) &
+              complete.cases(data$profitTercile) & complete.cases(data$ageTercile) & complete.cases(data$sizeTercile) &
+              (data$revenueChange < 1e12) & (data$costChange < 1e12) & (data$incomeChange < 1e12),] # & complete.cases(data$incomeChange)
 
 dim(data)
 
-goodsData = data %>% mutate(revenueChange = Winsorize(revenueChange, probs = c(0.01, 0.99)),
+goodsData = data %>% mutate(revenueChange = Winsorize(revenueChange, probs = c(0.01, 0.99), na.rm = TRUE),
                              # incomeChange  = Winsorize(incomeChange, probs = c(0.01, 0.99)),
-                             costChange    = Winsorize(costChange, probs = c(0.01, 0.99)),
-                             # inventoryChange = Winsorize(inventoryChange, probs = c(0.01, 0.98)),
+                       costChange    = Winsorize(costChange, probs = c(0.01, 0.99), na.rm = TRUE),
+                       totalRevenue  = Winsorize(totalRevenue, probs = c(0.01, 0.99), na.rm = TRUE),
+                       costGoodsSold = Winsorize(costGoodsSold, probs = c(0.01, 0.99), na.rm = TRUE),
+                       lnCost = log(costGoodsSold + 0.0001),
+                       lnRev  = log(totalRevenue + 0.0001),
+                       lnCostNormd = log((costGoodsSold + 0.0001)/assets),
+                       lnRevNormd  = log((totalRevenue + 0.0001)/assets),
                        yearQtr = paste0(year,"_",qtr),
-                       firmQtr = paste0(gvkey,qtr),
-                       naics2 = substr(naics,1,2), zip2 = substr(zipcode,1,2),
-                       hotTier = ntile(quarterly_avg_temp,3), wetTier = ntile(quarterly_avg_precip,3),
-                       variedWet = ntile(quarterly_variance_precip,3), variedHot = ntile(quarterly_variance_temp,3),
-                       roaTier = ntile(roa, 3), ageTier = ntile(earliestYear, 3), profitTier = ntile(netIncome,3),
-                       extremeTempsZip  = temp_zipquant_0.95 + temp_zipquant_1.0,
-                       extremePrecipZip = precip_zipquant_0.95 + precip_zipquant_1.0) %>% 
-                filter(!(famafrench %in% c('6','7','8','11','32','33','34','43','44','45','46','47','48'))) %>% unique()
+                       firmQtr = paste0(gvkey,'_',qtr), 
+                       ageQtr  = paste0(ageTercile,"_",yearQtr),
+                       sizeQtr  = paste0(sizeTercile,"_",yearQtr),
+                       profitQtr  = paste0(profitTercile,"_",yearQtr),
+                       indQtr  = paste0(famafrench,yearQtr)) %>% 
+                filter(!(famafrench %in% c('44','45','47','48'))) %>% unique()
 
-write.csv(goodsData,"extremes/goodsData.csv")
+goodsData = goodsData[complete.cases(goodsData$lnCost) & (goodsData$lnCostNormd < 1e12),] 
 
 dim(goodsData)
-goodsData = pdata.frame(goodsData, index = c('gvkey','yearQtr'))
+
+
+# add a couple of these: gvkey_calQtr, ageTercile_Qtr, profTercile_Qtr, sizeTercile_Qtr
+
+# 'firmQtr', 
+goodsData_withDummies = dummy_cols(goodsData, select_columns =  c('gvkey', 'indQtr','ageQtr','sizeQtr','profitQtr'), remove_first_dummy = TRUE)
+write.csv(goodsData_withDummies,"extremes/goodsData_igData.csv")
+
+
+agData = goodsData %>% filter(famafrench == 2)
+agData_withDummies = dummy_cols(agData, select_columns =  c('gvkey', 'indQtr','ageQtr','sizeQtr','profitQtr'), remove_first_dummy = TRUE)
+write.csv(agData_withDummies,"extremes/agData_igData.csv")
+
+cnstrctnData             = goodsData %>% filter((famafrench == 17) | (famafrench == 18))
+cnstrctnData_withDummies = dummy_cols(cnstrctnData, select_columns =  c('gvkey', 'indQtr','ageQtr','sizeQtr','profitQtr'), remove_first_dummy = TRUE)
+write.csv(cnstrctnData_withDummies,"extremes/cnstrctnData_igData.csv")
+
+utilitiesData             = goodsData %>% filter((famafrench == 31))
+utilitiesData_withDummies = dummy_cols(utilitiesData, select_columns =  c('gvkey', 'indQtr','ageQtr','sizeQtr','profitQtr'), remove_first_dummy = TRUE)
+write.csv(utilitiesData_withDummies,"extremes/utilitiesData_igData.csv")
+
+
+dim(agData)
+
+
+
+# let's do all the regression results by famafrench level
+for (ind in seq(1,43)){
+  tempData = goodsData %>% filter(famafrench == ind)
+  tempData_withDummies = dummy_cols(tempData, select_columns =  c('gvkey', 'indQtr','ageQtr','sizeQtr','profitQtr'), remove_first_dummy = TRUE)
+  
+  filename = paste0('extremes/igData_ind', ind,'.csv')
+  print(dim(tempData))
+}
+
+ind = 0
+filename = paste0('extremes/igData_ind', ind,'.csv')
+
+############################################################################
+
+X = goodsData %>% select(starts_with(c('precip','temp','gvkey_', 'indQtr_'))) %>% as.matrix()
+
+
+c("assets","costGoodsSold","totalInv","netIncome","totalRevenue","assetsLast",                             
+"netIncomeLast","totalRevenueLast","costGoodsSoldLast","totalInvLast","incomeChange","revenueChange",
+"costChange","inventoryChange")
+
+
+y = goodsData %>% pull(revenueChange) %>% as.matrix()
+
+
+
+(solve(t(X) %*% X) %*% X)%*% y
+
+coef(.lm.fit(cbind(1,X), y))
 
 #######################################################################################################################
-summary(lm(revenueChange ~ precip_annualquant_1.0 + temp_annualquant_1.0 +
-      factor(famafrench) + factor(firmQtr) + factor(zipcode), data = goodsData))
+
+ptm <- proc.time()
+summary(lm(revenueChange ~ precip5Days_annualquant_1x5Yrs + factor(gvkey) + factor(indQtr), 
+           data = goodsData))
+proc.time() - ptm
 
 model_robust_stata <- coeftest(model, 
                                 vcov = vcovHC,
@@ -166,4 +246,11 @@ for (ind in data %>% pull(naics2) %>% unique() %>% sort()){
   
 }
   
-
+############################################################################################################################
+,
+naics2 = substr(naics,1,2), zip2 = substr(zipcode,1,2),
+hotTier = ntile(quarterly_avg_temp,3), wetTier = ntile(quarterly_avg_precip,3),
+variedWet = ntile(quarterly_variance_precip,3), variedHot = ntile(quarterly_variance_temp,3),
+roaTier = ntile(roa, 3), ageTier = ntile(earliestYear, 3), profitTier = ntile(netIncome,3),
+extremeTempsZip  = temp_zipquant_0.95 + temp_zipquant_1.0,
+extremePrecipZip = precip_zipquant_0.95 + precip_zipquant_1.0
