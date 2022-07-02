@@ -90,10 +90,15 @@ dim(agData)
 
 # let's do all the regression results by famafrench level
 for (ind in seq(1,43)){
+  print(ind)
+  
   tempData = goodsData %>% filter(famafrench == ind)
+  
   tempData_withDummies = dummy_cols(tempData, select_columns =  c('gvkey', 'indQtr','ageQtr','sizeQtr','profitQtr'), remove_first_dummy = TRUE)
   
-  filename = paste0('extremes/igData_ind', ind,'.csv')
+  # filename = paste0('data/companyData/igData_ind', ind,'.csv')
+  # write.csv(tempData_withDummies,filename)
+  
   print(dim(tempData))
 }
 
