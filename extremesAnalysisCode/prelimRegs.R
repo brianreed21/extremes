@@ -30,7 +30,7 @@ head(data)
 
 
 ########################################################################################################################
-# clean the data and remove any financial firms
+# clean the data, first pass and remove any financial firms
 
 dim(data)
 # data = data[complete.cases(data$employeesAtLocation) & data$employeesAtLocation > 0.5,]
@@ -42,6 +42,8 @@ data = data[complete.cases(data$revenueChange) & complete.cases(data$costChange)
 
 dim(data)
 
+########################################################################################################################
+# run this to get data across all firms
 goodsData = data %>% mutate(revenueChange = Winsorize(revenueChange, probs = c(0.01, 0.99), na.rm = TRUE),
                              # incomeChange  = Winsorize(incomeChange, probs = c(0.01, 0.99)),
                        costChange    = Winsorize(costChange, probs = c(0.01, 0.99), na.rm = TRUE),
@@ -69,7 +71,7 @@ dim(goodsData)
 # 'firmQtr', 
 goodsData_withDummies = dummy_cols(goodsData, select_columns =  c('gvkey', 'indQtr','ageQtr','sizeQtr','profitQtr'), remove_first_dummy = TRUE)
 write.csv(goodsData_withDummies,"extremes/goodsData_igData.csv")
-
+test = read.csv("extremes/goodsData_igData.csv")
 
 agData = goodsData %>% filter(famafrench == 2)
 agData_withDummies = dummy_cols(agData, select_columns =  c('gvkey', 'indQtr','ageQtr','sizeQtr','profitQtr'), remove_first_dummy = TRUE)
@@ -86,22 +88,45 @@ write.csv(utilitiesData_withDummies,"extremes/utilitiesData_igData.csv")
 
 dim(agData)
 
-
-
+##################################################################
 # let's do all the regression results by famafrench level
 for (ind in seq(1,43)){
   print(ind)
   
-  tempData = goodsData %>% filter(famafrench == ind)
+  tempData = data %>% filter(famafrench == ind) %>% mutate(revenueChange = Winsorize(revenueChange, probs = c(0.01, 0.99), na.rm = TRUE),
+                              # incomeChange  = Winsorize(incomeChange, probs = c(0.01, 0.99)),
+                              costChange    = Winsorize(costChange, probs = c(0.01, 0.99), na.rm = TRUE),
+                              totalRevenue  = Winsorize(totalRevenue, probs = c(0.01, 0.99), na.rm = TRUE),
+                              costGoodsSold = Winsorize(costGoodsSold, probs = c(0.01, 0.99), na.rm = TRUE),
+                              lnCost = log(costGoodsSold + 0.0001),
+                              lnRev  = log(totalRevenue + 0.0001),
+                              lnCostNormd = log((costGoodsSold + 0.0001)/assets),
+                              lnRevNormd  = log((totalRevenue + 0.0001)/assets),
+                              yearQtr = paste0(year,"_",qtr),
+                              indQtr  = paste0(famafrench,yearQtr),
+                              firmQtr = paste0(gvkey,'_',qtr)) %>% 
+                        mutate(ageTercile    = ntile(earliestYear,3),
+                               profitTercile = ntile(roa_lagged,3),
+                               sizeTercile   = ntile(assetsLagged,3)) %>% 
+                        mutate(ageQtr  = paste0(ageTercile,"_",yearQtr),
+                              sizeQtr  = paste0(sizeTercile,"_",yearQtr),
+                              profitQtr  = paste0(profitTercile,"_",yearQtr)) %>%
+                        filter(!(famafrench %in% c('44','45','47','48'))) %>% unique()
   
-  tempData_withDummies = dummy_cols(tempData, select_columns =  c('gvkey', 'indQtr','ageQtr','sizeQtr','profitQtr'), remove_first_dummy = TRUE)
+  tempData = tempData[complete.cases(tempData$lnCost) & (tempData$lnCostNormd < 1e12),] 
   
-  # filename = paste0('data/companyData/igData_ind', ind,'.csv')
-  # write.csv(tempData_withDummies,filename)
+  # dim(goodsData)
   
-  print(dim(tempData))
+  tempData_withDummies = dummy_cols(tempData, select_columns =  c('gvkey', 'ageTercile', 'sizeTercile', 'profitTercile', 'ageQtr','sizeQtr','profitQtr'), remove_first_dummy = TRUE)
+  
+  filename = paste0('data/companyData/igData_ind', ind,'.csv')
+  write.csv(tempData_withDummies,filename)
+  
+  print(dim(tempData_withDummies))
 }
 
+
+table(tempData$ageTercile)
 ind = 0
 filename = paste0('extremes/igData_ind', ind,'.csv')
 
