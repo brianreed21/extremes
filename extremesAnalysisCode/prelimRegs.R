@@ -45,7 +45,6 @@ dim(data)
 ########################################################################################################################
 # run this to get data across all firms
 goodsData = data %>% mutate(revenueChange = Winsorize(revenueChange, probs = c(0.01, 0.99), na.rm = TRUE),
-                             # incomeChange  = Winsorize(incomeChange, probs = c(0.01, 0.99)),
                        costChange    = Winsorize(costChange, probs = c(0.01, 0.99), na.rm = TRUE),
                        totalRevenue  = Winsorize(totalRevenue, probs = c(0.01, 0.99), na.rm = TRUE),
                        costGoodsSold = Winsorize(costGoodsSold, probs = c(0.01, 0.99), na.rm = TRUE),
