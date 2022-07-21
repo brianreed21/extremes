@@ -12,16 +12,12 @@ setwd("~/Documents/supplyChain")
 # load: changes data, largest supplier data, and all supplier data
 igData           <- read.csv("data/companyData/igWithWeather.csv") %>% select(-X) 
 largestSuppliers <- read.csv("data/companyData/largestSuppliersWithWeather.csv") %>% select(-X)  
-allSuppliers     <- read.csv("data/companyData/allSuppliersWithWeather.csv") %>% select(-X)  
+allSuppliers     <- read.csv("data/companyData/allSuppliersWithWeather.csv")  %>% select(-X)  
 
 
 # choose to focus on one of them
-data <- igData 
+data <- allSuppliers 
 dim(data)
-
-
-head(data)
-
 
 
 ########################################################################################################################
@@ -47,7 +43,12 @@ goodsData = data %>% mutate(revenueChange = Winsorize(revenueChange, probs = c(0
                        sizeQtr  = paste0(sizeTercile,"_",yearQtr),
                        profitQtr  = paste0(profitTercile,"_",yearQtr),
                        indQtr  = paste0(famafrench,yearQtr)) %>% 
-                filter(!(famafrench %in% c('44','45','47','48'))) %>% unique()
+                filter(!(famafrench %in% c('7','11','32','33','34','43','44','45','47','48'))) %>% 
+                filter(!(supplier_famafrench %in% c('7','11','32','33','34','43','44','45','47','48'))) %>% unique()
+
+
+# we've added a few more of the services categories
+
 
 goodsData = goodsData[complete.cases(goodsData$lnCost) & (goodsData$lnCostNormd < 1e12),] 
 
@@ -62,20 +63,22 @@ dim(goodsData)
 
 # 'firmQtr', 
 goodsData_withDummies = dummy_cols(goodsData, select_columns =  c('gvkey', 'indQtr','ageQtr','sizeQtr','profitQtr'), remove_first_dummy = TRUE)
-write.csv(goodsData_withDummies,"extremes/goodsData_igData.csv")
-test = read.csv("extremes/goodsData_igData.csv")
+write.csv(goodsData_withDummies,"data/companyData/goodsData_supplierData.csv")
 
-agData = goodsData %>% filter((famafrench == 1) | (famafrench == 2))
+
+
+
+agData = goodsData %>% filter((supplier_famafrench == 1) | (supplier_famafrench == 2))
 agData_withDummies = dummy_cols(agData, select_columns =  c('gvkey', 'indQtr','ageQtr','sizeQtr','profitQtr'), remove_first_dummy = TRUE)
-write.csv(agData_withDummies,"extremes/agData_igData.csv")
+write.csv(agData_withDummies,"extremes/supplier_agData_igData.csv")
 
-cnstrctnData             = goodsData %>% filter((famafrench == 17) | (famafrench == 18))
+cnstrctnData             = goodsData %>% filter((supplier_famafrench == 17) | (supplier_famafrench == 18))
 cnstrctnData_withDummies = dummy_cols(cnstrctnData, select_columns =  c('gvkey', 'indQtr','ageQtr','sizeQtr','profitQtr'), remove_first_dummy = TRUE)
-write.csv(cnstrctnData_withDummies,"extremes/cnstrctnData_igData.csv")
+write.csv(cnstrctnData_withDummies,"extremes/supplier_cnstrctnData_igData.csv")
 
-utilitiesData             = goodsData %>% filter((famafrench == 31))
+utilitiesData             = goodsData %>% filter((supplier_famafrench == 31))
 utilitiesData_withDummies = dummy_cols(utilitiesData, select_columns =  c('gvkey', 'indQtr','ageQtr','sizeQtr','profitQtr'), remove_first_dummy = TRUE)
-write.csv(utilitiesData_withDummies,"extremes/utilitiesData_igData.csv")
+write.csv(utilitiesData_withDummies,"extremes/supplier_utilitiesData_igData.csv")
 
 
 dim(agData)
@@ -85,35 +88,47 @@ dim(agData)
 for (ind in seq(1,43)){
   print(ind)
   
-  tempData = data %>% filter(famafrench == ind) %>% mutate(revenueChange = Winsorize(revenueChange, probs = c(0.01, 0.99), na.rm = TRUE),
-                              # incomeChange  = Winsorize(incomeChange, probs = c(0.01, 0.99)),
-                              costChange    = Winsorize(costChange, probs = c(0.01, 0.99), na.rm = TRUE),
-                              totalRevenue  = Winsorize(totalRevenue, probs = c(0.01, 0.99), na.rm = TRUE),
-                              costGoodsSold = Winsorize(costGoodsSold, probs = c(0.01, 0.99), na.rm = TRUE),
-                              lnCost = log(costGoodsSold + 0.0001),
-                              lnRev  = log(totalRevenue + 0.0001),
-                              lnCostNormd = log((costGoodsSold + 0.0001)/assets),
-                              lnRevNormd  = log((totalRevenue + 0.0001)/assets),
-                              yearQtr = paste0(year,"_",qtr),
-                              indQtr  = paste0(famafrench,yearQtr),
-                              firmQtr = paste0(gvkey,'_',qtr)) %>% 
-                        mutate(ageTercile    = ntile(earliestYear,3),
-                               profitTercile = ntile(roa_lagged,3),
-                               sizeTercile   = ntile(assetsLagged,3)) %>% 
-                        mutate(ageQtr  = paste0(ageTercile,"_",yearQtr),
-                              sizeQtr  = paste0(sizeTercile,"_",yearQtr),
-                              profitQtr  = paste0(profitTercile,"_",yearQtr)) %>%
-                        filter(!(famafrench %in% c('44','45','47','48'))) %>% unique()
+  tempData = data %>% filter(supplier_famafrench == ind) 
+  if (dim(tempData)[1] > 0){
+    tempData = tempData %>% mutate(revenueChange = Winsorize(revenueChange, probs = c(0.01, 0.99), na.rm = TRUE),
+                                   # incomeChange  = Winsorize(incomeChange, probs = c(0.01, 0.99)),
+                                   costChange    = Winsorize(costChange, probs = c(0.01, 0.99), na.rm = TRUE),
+                                   totalRevenue  = Winsorize(totalRevenue, probs = c(0.01, 0.99), na.rm = TRUE),
+                                   costGoodsSold = Winsorize(costGoodsSold, probs = c(0.01, 0.99), na.rm = TRUE),
+                                   lnCost = log(costGoodsSold + 0.0001),
+                                   lnRev  = log(totalRevenue + 0.0001),
+                                   lnCostNormd = log((costGoodsSold + 0.0001)/assets),
+                                   lnRevNormd  = log((totalRevenue + 0.0001)/assets),
+                                   yearQtr = paste0(year,"_",qtr),
+                                   indQtr  = paste0(famafrench,yearQtr),
+                                   firmQtr = paste0(gvkey,'_',qtr)) %>% 
+      mutate(ageTercile    = ntile(earliestYear,3),
+             profitTercile = ntile(roa_lagged,3),
+             sizeTercile   = ntile(assetsLagged,3)) %>% 
+      mutate(ageQtr  = paste0(ageTercile,"_",yearQtr),
+             sizeQtr  = paste0(sizeTercile,"_",yearQtr),
+             profitQtr  = paste0(profitTercile,"_",yearQtr)) %>%
+      filter(!(famafrench %in% c('44','45','47','48'))) %>% unique()
+    
+    tempData = tempData[complete.cases(tempData$lnCost) & (tempData$lnCostNormd < 1e12),] 
+    
+    # dim(goodsData)
+    
+    tempData_withDummies = dummy_cols(tempData, select_columns =  c('gvkey', 'ageTercile', 'sizeTercile', 'profitTercile', 'ageQtr','sizeQtr','profitQtr'), remove_first_dummy = TRUE)
+    
+    filename = paste0('data/companyData/supplier_igData_ind', ind,'.csv')
+    write.csv(tempData_withDummies,filename)
+    
+    print(dim(tempData_withDummies))
+    
+  }
   
-  tempData = tempData[complete.cases(tempData$lnCost) & (tempData$lnCostNormd < 1e12),] 
   
-  # dim(goodsData)
-  
-  tempData_withDummies = dummy_cols(tempData, select_columns =  c('gvkey', 'ageTercile', 'sizeTercile', 'profitTercile', 'ageQtr','sizeQtr','profitQtr'), remove_first_dummy = TRUE)
-  
-  filename = paste0('data/companyData/igData_ind', ind,'.csv')
-  write.csv(tempData_withDummies,filename)
-  
-  print(dim(tempData_withDummies))
+  else{
+    filename = paste0('data/companyData/supplier_igData_ind', ind,'.csv')
+    write.csv(tempData,filename)
+    
+    print(dim(tempData))
+  }
 }
 
