@@ -1,0 +1,61 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{natbib} 
+\usepackage{enumitem}
+\usepackage{setspace}
+\usepackage{multirow}
+\bibliographystyle{aer} 
+\usepackage{amsmath}
+\usepackage{lscape}
+
+\onehalfspacing
+
+\begin{document}
+	
+	\section*{Related Work}
+	A bit further afield, .
+	
+	Future versions of this work could rely on a few data sources that are starting to come online. Papers like [cite Fed paper] use information from Bills of Lading attached to shipping imports to construct much richer pictures of a company's suppliers. Several supply chain visibility companies, such as Altana and VersedAI, supplement this data 
+	
+	\section*{Current State}
+	I feel like I've crossed a few important milestones here and am at a little bit of a crossroads or inflection point. Mainly, I've done the following: 
+	\begin{itemize}
+		\item Tested out the direct effect of extreme weather on quarterly outcomes, on an industry-by-industry basis. This also involved narrowing down the definitions of ``extreme'', as well as the normalizations for the outcomes.
+		
+		\item Tested out the indirect effect of extreme weather on quarterly outcome, by looking at the one-hop transmission of these effects. These are also on a supplier industry-by-supplier industry basis.
+		
+		\item Conduct robustness checks on the above results by:
+		\begin{itemize}
+			\item Experimenting with streaks (5+ days in row with extreme heat and extreme rain).
+			
+			\item Using employment-weighted counts of extreme events instead of using the HQs.
+			
+		\end{itemize}
+		
+	\end{itemize}
+	
+	There are some other things I'm hoping to get through, including (1) running all regressions with stock data as well as the quarterly data, and (2) narrowing down the indirect effects data so that the suppliers' location is sufficiently different from the customers' that we're not just picking up the direct effect by way of the customers' weather. I'd be curious, though, to talk through what an ideal set of results might be at this point, and ways to break the ice a bit. I'm guessing that the strategy might be, ``Write everything out so far.'' This is probably a good place to start this afternoon, though I'd still be curious to get a better sense of the ideal tables and figures to shoot for.
+	
+	
+	
+	\section*{Conference Submissions}
+	I'm curious what you think about the following potential venues for submitting work, and if there are other ones outside of seminars that would be relevant.
+	
+	
+	\subsection*{USAEE}
+	Deadline for submissions is 8/1. I'd be curious what you think about the fit for the conference, as it seems potentially a little bit more energy-focused than this one. I have also been working on another paper with Ken Gillingham that is a little bit closer of a fit, but I would prefer to get more feedback on this supply chain work if at all possible. The specific topics they're looking for are listed here: https://www.usaeeconference.com/call-for-papers/. 
+	
+	I think I'd submit an abstract to the general session, though they also have student posters and student egg timers. They've said that they will redirect student submissions to where they're most appropriate, so there's not a big risk to submitting to the general session instead of student one.
+	
+	\subsection*{Climate Change AI}
+	This conference would be interesting to be a part of, but right now, it seems like I would have likely have to submit more of a ``frameworks'' paper, or a review paper, which is a little bit further off base. There's not a clear overlap between the econometric work and the AI approaches that they're advocating for.
+	
+	
+	\subsection*{AGU}
+	Deadline is 8/3. More earth science focused, with a little bit on ``multi-sector dynamics''. I will need to look into the sessions a little bit more carefully and see what might be a solid fit here.
+	
+	
+\end{document}
