@@ -16,15 +16,30 @@ allSuppliers     <- read.csv("data/companyData/allSuppliersWithWeather.csv")  %>
 
 
 # choose to focus on one of them
-data <- igData 
-dim(data)
 
 
 ########################################################################################################################
 # clean the data, first pass 
+data <- igData 
+dim(data)
+
+unique(data$indGroup)
+
 data = data[complete.cases(data$revenueChange) & complete.cases(data$costChange) & complete.cases(data$assets) & 
               complete.cases(data$profitTercile) & complete.cases(data$ageTercile) & complete.cases(data$sizeTercile),] %>% 
-  filter(indGroup %in% c('agForFish','construction','manu','mining','transportUtilities'))
+  filter(indGroup %in% c('agForFish','construction','manu','mining','transportUtilities','wholesale','retail')) %>% 
+  mutate( indGroup = replace(indGroup, (indGroup == 'manu')     & (sic2 > 29), 'manu2'),
+          indGroup = replace(indGroup, (indGroup == 'services') & (sic2 > 79), 'services2')) %>% 
+  mutate(heatBin = case_when(precip_zipQuarterquant_0.95 <= 5   ~ "low", 
+                             (precip_zipQuarterquant_0.95 > 5) & (precip_zipQuarterquant_0.95 <= 10)    ~ "med",
+                             (precip_zipQuarterquant_0.95 > 10)    ~ "high"),
+         precipBin = case_when(temp_zipQuarterquant_0.95 <= 5   ~ "low", 
+                             (temp_zipQuarterquant_0.95 > 5) & (temp_zipQuarterquant_0.95 <= 10)    ~ "med",
+                             (temp_zipQuarterquant_0.95 > 10)    ~ "high"))
+
+
+table(data$heatBin)
+table(data$precipBin)
 
 dim(data)
 
@@ -62,8 +77,8 @@ dim(goodsData)
 # add a couple of these: gvkey_calQtr, ageTercile_Qtr, profTercile_Qtr, sizeTercile_Qtr
 
 # 'firmQtr', 
-goodsData_withDummies = dummy_cols(goodsData, select_columns =  c('gvkey', 'indQtr','ageTercile', 'sizeTercile', 'profitTercile',), remove_first_dummy = TRUE)
-write.csv(goodsData_withDummies,"data/companyData/goodsData_igData.csv")
+goodsData_withDummies = dummy_cols(goodsData, select_columns =  c('precipBin', 'heatBin'), remove_first_dummy = TRUE) # dummy_cols(goodsData, select_columns =  c('gvkey', 'precipBin', 'heatBin', 'indQtr','ageTercile', 'sizeTercile', 'profitTercile'), remove_first_dummy = TRUE)
+write.csv(goodsData,"data/companyData/goodsData_igData.csv")
 
 
 ##################################################################
