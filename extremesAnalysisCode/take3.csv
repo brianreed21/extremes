@@ -1,0 +1,8 @@
+industry X extremeEvent Interaction,coefficient
+construction X extremePrecip,0.0278 (0.00)
+manu X extremePrecip,0.0217 (0.00)
+mining X extremePrecip,0.0152 (0.04)
+retail X extremePrecip,0.0226 (0.00)
+transportUtilities X extremePrecip,0.0204 (0.00)
+wholesale X extremePrecip,0.0249 (0.00)
+extremePrecip,-0.0228 (0.00)

@@ -25,21 +25,51 @@ dim(data)
 
 unique(data$indGroup)
 
-data = data[complete.cases(data$revenueChange) & complete.cases(data$costChange) & complete.cases(data$assets) & 
+data = data[complete.cases(data$revenueChange)   & complete.cases(data$costChange) & complete.cases(data$assets) & 
               complete.cases(data$profitTercile) & complete.cases(data$ageTercile) & complete.cases(data$sizeTercile),] %>% 
   filter(indGroup %in% c('agForFish','construction','manu','mining','transportUtilities','wholesale','retail')) %>% 
-  mutate( indGroup = replace(indGroup, (indGroup == 'manu')     & (sic2 > 29), 'manu2'),
-          indGroup = replace(indGroup, (indGroup == 'services') & (sic2 > 79), 'services2')) %>% 
-  mutate(heatBin = case_when(precip_zipQuarterquant_0.95 <= 5   ~ "low", 
-                             (precip_zipQuarterquant_0.95 > 5) & (precip_zipQuarterquant_0.95 <= 10)    ~ "med",
-                             (precip_zipQuarterquant_0.95 > 10)    ~ "high"),
-         precipBin = case_when(temp_zipQuarterquant_0.95 <= 5   ~ "low", 
-                             (temp_zipQuarterquant_0.95 > 5) & (temp_zipQuarterquant_0.95 <= 10)    ~ "med",
-                             (temp_zipQuarterquant_0.95 > 10)    ~ "high"))
+  mutate(wetDaysCat = case_when(precip_zipQuarterquant_0.95  <= 5   ~ "cat1", 
+                               (precip_zipQuarterquant_0.95  > 5)  & (precip_zipQuarterquant_0.95 <= 10)    ~ "cat2",
+                               (precip_zipQuarterquant_0.95  > 10) & (precip_zipQuarterquant_0.95 <= 15)    ~ "cat3",
+                               (precip_zipQuarterquant_0.95  > 15)                                          ~ "cat4"),
+         
+         lag1_wetDaysCat = case_when(lag1_precip_zipQuarterquant_0.95  <= 5   ~ "cat1", 
+                                (lag1_precip_zipQuarterquant_0.95  > 5)  & (lag1_precip_zipQuarterquant_0.95 <= 10)    ~ "cat2",
+                                (lag1_precip_zipQuarterquant_0.95  > 10) & (lag1_precip_zipQuarterquant_0.95 <= 15)    ~ "cat3",
+                                (lag1_precip_zipQuarterquant_0.95  > 15)                                          ~ "cat4"),
+         lag2_wetDaysCat  = case_when(lag2_precip_zipQuarterquant_0.95  <= 5   ~ "cat1", 
+                                     (lag2_precip_zipQuarterquant_0.95  > 5)  & (lag2_precip_zipQuarterquant_0.95 <= 10)    ~ "cat2",
+                                     (lag2_precip_zipQuarterquant_0.95  > 10) & (lag2_precip_zipQuarterquant_0.95 <= 15)    ~ "cat3",
+                                     (lag2_precip_zipQuarterquant_0.95  > 15)                                          ~ "cat4"),
+         lag3_wetDaysCat  = case_when(lag3_precip_zipQuarterquant_0.95  <= 5   ~ "cat1", 
+                                     (lag3_precip_zipQuarterquant_0.95  > 5)  & (lag3_precip_zipQuarterquant_0.95 <= 10)    ~ "cat2",
+                                     (lag3_precip_zipQuarterquant_0.95  > 10) & (lag3_precip_zipQuarterquant_0.95 <= 15)    ~ "cat3",
+                                     (lag3_precip_zipQuarterquant_0.95  > 15)                                          ~ "cat4"),
+         
+         hotDaysCat = case_when(temp_zipQuarterquant_0.95    <= 5   ~ "cat1", 
+                                (temp_zipQuarterquant_0.95   > 5)  & (temp_zipQuarterquant_0.95 <= 10)    ~ "cat2",
+                                (temp_zipQuarterquant_0.95   > 10) & (temp_zipQuarterquant_0.95 <= 15)   ~ "cat3",
+                                (temp_zipQuarterquant_0.95   > 15)  ~ "cat4"),
+         
+         lag1_hotDaysCat = case_when(lag1_temp_zipQuarterquant_0.95    <= 5   ~ "cat1", 
+                                (lag1_temp_zipQuarterquant_0.95   > 5)  & (lag1_temp_zipQuarterquant_0.95 <= 10)    ~ "cat2",
+                                (lag1_temp_zipQuarterquant_0.95   > 10) & (lag1_temp_zipQuarterquant_0.95 <= 15)   ~ "cat3",
+                                (lag1_temp_zipQuarterquant_0.95   > 15)  ~ "cat4"),
+         
+         lag2_hotDaysCat = case_when(lag2_temp_zipQuarterquant_0.95    <= 5   ~ "cat1", 
+                                (lag2_temp_zipQuarterquant_0.95   > 5)  & (lag2_temp_zipQuarterquant_0.95 <= 10)    ~ "cat2",
+                                (lag2_temp_zipQuarterquant_0.95   > 10) & (lag2_temp_zipQuarterquant_0.95 <= 15)   ~ "cat3",
+                                (lag2_temp_zipQuarterquant_0.95   > 15)  ~ "cat4"),
+         
+         lag3_hotDaysCat = case_when(lag3_temp_zipQuarterquant_0.95    <= 5   ~ "cat1", 
+                                (lag3_temp_zipQuarterquant_0.95   > 5)  & (lag3_temp_zipQuarterquant_0.95 <= 10)    ~ "cat2",
+                                (lag3_temp_zipQuarterquant_0.95   > 10) & (lag3_temp_zipQuarterquant_0.95 <= 15)   ~ "cat3",
+                                (lag3_temp_zipQuarterquant_0.95   > 15)  ~ "cat4")
+         )
 
 
-table(data$heatBin)
-table(data$precipBin)
+table(data$wetDaysCat)
+table(data$hotDaysCat)
 
 dim(data)
 
@@ -47,7 +77,10 @@ dim(data)
 # run this to get data across all firms
 goodsData = data  %>%  mutate(ageTercile    = ntile(earliestYear,3),
          profitTercile = ntile(roa_lagged,3),
-         sizeTercile   = ntile(assetsLagged,3))  %>% 
+         sizeTercile   = ntile(assetsLagged,3),
+         tempTercile   = ntile(quarterly_avg_temp,3), 
+         precipTercile = ntile(quarterly_avg_precip,3),
+         firmConcTercile = ntile(locationFracOfEmployees,3))  %>% 
   mutate(revenueChange = Winsorize(revenueChange, probs = c(0.01, 0.99), na.rm = TRUE),
                        costChange    = Winsorize(costChange, probs = c(0.01, 0.99), na.rm = TRUE),
                        totalRevenue  = Winsorize(totalRevenue, probs = c(0.01, 0.99), na.rm = TRUE),
@@ -61,13 +94,17 @@ goodsData = data  %>%  mutate(ageTercile    = ntile(earliestYear,3),
                        ageQtr  = paste0(ageTercile,"_",yearQtr),
                        sizeQtr  = paste0(sizeTercile,"_",yearQtr),
                        profitQtr  = paste0(profitTercile,"_",yearQtr),
-                       indQtr  = paste0(indGroup,yearQtr)) %>% filter()
-# we've added a few more of the services categories
+                       indQtr  = paste0(indGroup,yearQtr),
+         extremeHeat   = temp_zipQuarterquant_0.95   + lag1_temp_zipQuarterquant_0.95,
+         extremePrecip = precip_zipQuarterquant_0.95 + lag1_precip_zipQuarterquant_0.95)
 
-
+# goodsData %>% filter(firmConcTercile != 1) %>% pull(locationFracOfEmployees) %>% min()
+goodsData %>% pull(temp_annualquant_0.95) %>% mean()
 goodsData = goodsData[complete.cases(goodsData$lnCost) & (goodsData$lnCostNormd < 1e12),] 
 
-dim(goodsData)
+
+
+write.csv(goodsData,"data/companyData/goodsData_igData.csv")
 
 
 
