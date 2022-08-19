@@ -99,14 +99,15 @@ goodsData = data  %>%  mutate(ageTercile    = ntile(earliestYear,3),
          extremePrecip = precip_zipQuarterquant_0.95 + lag1_precip_zipQuarterquant_0.95)
 
 # goodsData %>% filter(firmConcTercile != 1) %>% pull(locationFracOfEmployees) %>% min()
-goodsData %>% pull(temp_annualquant_0.95) %>% mean()
+goodsData %>% pull(temp_zipQuarter95_99) %>% max()
 goodsData = goodsData[complete.cases(goodsData$lnCost) & (goodsData$lnCostNormd < 1e12),] 
 
-
+sum(goodsData$temp_zipQuarter95_99 == goodsData$lag1_temp_zipQuarter95_99)
 
 write.csv(goodsData,"data/companyData/goodsData_igData.csv")
 
 
+colnames(goodsData)
 
 
 ##################################################################
