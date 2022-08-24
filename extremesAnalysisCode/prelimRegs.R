@@ -10,9 +10,10 @@ setwd("~/Documents/supplyChain")
 
 
 # load: changes data, largest supplier data, and all supplier data
-igData           <- read.csv("data/companyData/igWithWeather.csv") %>% select(-X) 
-largestSuppliers <- read.csv("data/companyData/largestSuppliersWithWeather.csv") %>% select(-X)  
-allSuppliers     <- read.csv("data/companyData/allSuppliersWithWeather.csv")  %>% select(-X)  
+igData           <- read.csv("data/companyData/igWithWeather.csv") %>% select(-X, -opInc_befDep) # before depreciation, things seem a bit more scarce
+
+# largestSuppliers <- read.csv("data/companyData/largestSuppliersWithWeather.csv") %>% select(-X)  
+# allSuppliers     <- read.csv("data/companyData/allSuppliersWithWeather.csv")  %>% select(-X)  
 
 
 # choose to focus on one of them
@@ -25,10 +26,19 @@ dim(data)
 
 unique(data$indGroup)
 
-data = data[complete.cases(data$revenueChange)   & complete.cases(data$costChange) & complete.cases(data$assets) & 
-              complete.cases(data$profitTercile) & complete.cases(data$ageTercile) & complete.cases(data$sizeTercile),] %>% 
+# lnCostNormd          = log(costGoodsSold/assetsLast + 1),
+# lnRevNormd           = log(totalRevenue/assetsLast + 1),
+# lnOpIncNormd_befDep  = log(opInc_befDep/assetsLast + 1),
+# lnOpIncNormd_afDep   = log(opInc_afDep/assetsLast  + 1),
+# lnStockClose         = log(priceClose + 1),
+
+data = data[complete.cases(data$revenueChange) & complete.cases(data$costChange) & complete.cases(data$assetsLast) & complete.cases(data$opInc_afDep) & complete.cases(data$netIncome) &
+  complete.cases(data$profitTercile) & complete.cases(data$ageTercile) & complete.cases(data$sizeTercile),] %>% 
   filter(indGroup %in% c('agForFish','construction','manu','mining','transportUtilities','wholesale','retail')) %>% 
-  mutate(wetDaysCat = case_when(precip_zipQuarterquant_0.95  <= 5   ~ "cat1", 
+  mutate(totalRevenue = case_when(totalRevenue < 0 ~ 0,
+                                  totalRevenue > 0 ~ totalRevenue), # 26 cases with negative revenues
+    
+        wetDaysCat = case_when(precip_zipQuarterquant_0.95  <= 5   ~ "cat1", 
                                (precip_zipQuarterquant_0.95  > 5)  & (precip_zipQuarterquant_0.95 <= 10)    ~ "cat2",
                                (precip_zipQuarterquant_0.95  > 10) & (precip_zipQuarterquant_0.95 <= 15)    ~ "cat3",
                                (precip_zipQuarterquant_0.95  > 15)                                          ~ "cat4"),
@@ -75,28 +85,47 @@ dim(data)
 
 ########################################################################################################################
 # run this to get data across all firms
+
 goodsData = data  %>%  mutate(ageTercile    = ntile(earliestYear,3),
          profitTercile = ntile(roa_lagged,3),
          sizeTercile   = ntile(assetsLagged,3),
          tempTercile   = ntile(quarterly_avg_temp,3), 
          precipTercile = ntile(quarterly_avg_precip,3),
          firmConcTercile = ntile(locationFracOfEmployees,3))  %>% 
-  mutate(revenueChange = Winsorize(revenueChange, probs = c(0.01, 0.99), na.rm = TRUE),
-                       costChange    = Winsorize(costChange, probs = c(0.01, 0.99), na.rm = TRUE),
-                       totalRevenue  = Winsorize(totalRevenue, probs = c(0.01, 0.99), na.rm = TRUE),
-                       costGoodsSold = Winsorize(costGoodsSold, probs = c(0.01, 0.99), na.rm = TRUE),
-                       lnCost = log(costGoodsSold + 0.0001),
-                       lnRev  = log(totalRevenue + 0.0001),
-                       lnCostNormd = log((costGoodsSold + 0.0001)/assets),
-                       lnRevNormd  = log((totalRevenue + 0.0001)/assets),
-                       yearQtr = paste0(year,"_",qtr),
-                       firmQtr = paste0(gvkey,'_',qtr), 
-                       ageQtr  = paste0(ageTercile,"_",yearQtr),
-                       sizeQtr  = paste0(sizeTercile,"_",yearQtr),
-                       profitQtr  = paste0(profitTercile,"_",yearQtr),
-                       indQtr  = paste0(indGroup,yearQtr),
+  
+  mutate(lnCostNormd          = log(costGoodsSold/(assetsLast + 0.001) + 1),
+         lnRevNormd           = log(totalRevenue/(assetsLast + 0.001) + 1),
+         # lnNetIncNormd        = log(netIncome/assetsLast + 1),
+         # lnOpIncNormd         = log(opInc_afDep/(assetsLast + 0.001)  + 1),
+         lnStockClose         = log(priceClose + 1),
+         
+         lnNetIncNormd       = case_when((netIncome/(assetsLast + 0.001) + 1 <= 0) ~ -10,
+                                         (netIncome/(assetsLast + 0.001) + 1 > 0) ~ log(netIncome/(assetsLast + 0.001) + 1)),
+         lnOpIncNormd        = case_when((opInc_afDep/(assetsLast + 0.001) + 1 <= 0) ~ -10,
+                                         (opInc_afDep/(assetsLast + 0.001) + 1 > 0) ~ log(opInc_afDep/(assetsLast + 0.001) + 1)),
+         
+         lnCostNormd         = Winsorize(lnCostNormd, probs = c(0.01, 0.99), na.rm = TRUE),
+         lnRevNormd          = Winsorize(lnRevNormd, probs = c(0.01, 0.99), na.rm = TRUE),
+         lnNetIncNormd       = Winsorize(lnNetIncNormd, probs = c(0.01, 0.99), na.rm = TRUE),
+         lnOpIncNormd        = Winsorize(lnOpIncNormd, probs = c(0.01, 0.99), na.rm = TRUE),
+         lnStockClose        = Winsorize(lnStockClose, probs = c(0.01, 0.99), na.rm = TRUE),
+         
+                  
+         # totalRevenue  = Winsorize(totalRevenue, probs = c(0.01, 0.99), na.rm = TRUE),
+         # costGoodsSold = Winsorize(costGoodsSold, probs = c(0.01, 0.99), na.rm = TRUE),
+         
+         yearQtr = paste0(year,"_",qtr),
+         firmQtr = paste0(gvkey,'_',qtr), 
+         ageQtr  = paste0(ageTercile,"_",yearQtr),
+         sizeQtr  = paste0(sizeTercile,"_",yearQtr),
+         profitQtr  = paste0(profitTercile,"_",yearQtr),
+         indQtr  = paste0(indGroup,yearQtr),
          extremeHeat   = temp_zipQuarterquant_0.95   + lag1_temp_zipQuarterquant_0.95,
          extremePrecip = precip_zipQuarterquant_0.95 + lag1_precip_zipQuarterquant_0.95)
+
+
+hist(goodsData$opInc_befDep/goodsData$assetsLast)
+
 
 # goodsData %>% filter(firmConcTercile != 1) %>% pull(locationFracOfEmployees) %>% min()
 goodsData %>% pull(temp_zipQuarter95_99) %>% max()
