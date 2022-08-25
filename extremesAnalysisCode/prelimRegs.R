@@ -24,16 +24,12 @@ igData           <- read.csv("data/companyData/igWithWeather.csv") %>% select(-X
 data <- igData 
 dim(data)
 
+
 unique(data$indGroup)
 
-# lnCostNormd          = log(costGoodsSold/assetsLast + 1),
-# lnRevNormd           = log(totalRevenue/assetsLast + 1),
-# lnOpIncNormd_befDep  = log(opInc_befDep/assetsLast + 1),
-# lnOpIncNormd_afDep   = log(opInc_afDep/assetsLast  + 1),
-# lnStockClose         = log(priceClose + 1),
-
-data = data[complete.cases(data$revenueChange) & complete.cases(data$costChange) & complete.cases(data$assetsLast) & complete.cases(data$opInc_afDep) & complete.cases(data$netIncome) &
-  complete.cases(data$profitTercile) & complete.cases(data$ageTercile) & complete.cases(data$sizeTercile),] %>% 
+# complete.cases(data$revenueChange) & complete.cases(data$costChange)  & complete.cases(data$opInc_afDep) & complete.cases(data$netIncome) &
+data = data[complete.cases(data$revenueChange) & complete.cases(data$costChange) & complete.cases(data$assetsLast) & 
+              complete.cases(data$profitTercile) & complete.cases(data$ageTercile) & complete.cases(data$sizeTercile),] %>% 
   filter(indGroup %in% c('agForFish','construction','manu','mining','transportUtilities','wholesale','retail')) %>% 
   mutate(totalRevenue = case_when(totalRevenue < 0 ~ 0,
                                   totalRevenue > 0 ~ totalRevenue), # 26 cases with negative revenues
@@ -92,17 +88,21 @@ goodsData = data  %>%  mutate(ageTercile    = ntile(earliestYear,3),
          tempTercile   = ntile(quarterly_avg_temp,3), 
          precipTercile = ntile(quarterly_avg_precip,3),
          firmConcTercile = ntile(locationFracOfEmployees,3))  %>% 
-  
-  mutate(lnCostNormd          = log(costGoodsSold/(assetsLast + 0.001) + 1),
-         lnRevNormd           = log(totalRevenue/(assetsLast + 0.001) + 1),
+  # this worked very well when it was netIncome/(assetsLast + 0.001), or same for
+  # vars other than netIncome
+  mutate(lnCostNormd          = log((costGoodsSold + 0.001)/(assetsLast + 0.001) + 1),
+         lnRevNormd           = log((totalRevenue )/(assetsLast + 0.001)), 
+         # anything with + 1 gives us .09 .22 .018 .018
+         
+         # totalRevenue + 0.001 gives us .09, .22, .018 .019 pvals
          # lnNetIncNormd        = log(netIncome/assetsLast + 1),
          # lnOpIncNormd         = log(opInc_afDep/(assetsLast + 0.001)  + 1),
          lnStockClose         = log(priceClose + 1),
          
-         lnNetIncNormd       = case_when((netIncome/(assetsLast + 0.001) + 1 <= 0) ~ -10,
-                                         (netIncome/(assetsLast + 0.001) + 1 > 0) ~ log(netIncome/(assetsLast + 0.001) + 1)),
-         lnOpIncNormd        = case_when((opInc_afDep/(assetsLast + 0.001) + 1 <= 0) ~ -10,
-                                         (opInc_afDep/(assetsLast + 0.001) + 1 > 0) ~ log(opInc_afDep/(assetsLast + 0.001) + 1)),
+         lnNetIncNormd       = case_when(((netIncome + 0.001)/(assetsLast + 0.001) <= 0) ~ -10,
+                                         ((netIncome + 0.001)/(assetsLast + 0.001)  > 0) ~ log(netIncome/assetsLast + 1)),
+         lnOpIncNormd        = case_when(((opInc_afDep + 0.001)/(assetsLast + 0.001) <= 0) ~ -10,
+                                         ((opInc_afDep + 0.001)/(assetsLast + 0.001) > 0) ~ log(opInc_afDep/assetsLast + 1)),
          
          lnCostNormd         = Winsorize(lnCostNormd, probs = c(0.01, 0.99), na.rm = TRUE),
          lnRevNormd          = Winsorize(lnRevNormd, probs = c(0.01, 0.99), na.rm = TRUE),
@@ -129,7 +129,7 @@ hist(goodsData$opInc_befDep/goodsData$assetsLast)
 
 # goodsData %>% filter(firmConcTercile != 1) %>% pull(locationFracOfEmployees) %>% min()
 goodsData %>% pull(temp_zipQuarter95_99) %>% max()
-goodsData = goodsData[complete.cases(goodsData$lnCost) & (goodsData$lnCostNormd < 1e12),] 
+# goodsData = goodsData[complete.cases(goodsData$lnCost) & (goodsData$lnCostNormd < 1e12),] 
 
 sum(goodsData$temp_zipQuarter95_99 == goodsData$lag1_temp_zipQuarter95_99)
 
