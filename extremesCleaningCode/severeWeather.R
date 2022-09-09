@@ -87,6 +87,7 @@ setwd("~/Documents/supplyChain")
 filename = paste0('data/companyData/thunderstormWinds','.csv')
 write.csv(thunderstormsByZIP,filename)
 
+thunderstormsByZIP %>% substr(yearQtr, 1:4)
 
 # %>% 
 #   group_by(STCOUNTYFP,yearQtr) %>% summarise(propAboveTenThou     = (sum(propAboveTenThou) > 0)*1,
