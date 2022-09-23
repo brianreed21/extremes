@@ -15,13 +15,13 @@ igData           <- read.csv("data/companyData/igWithWeather.csv") #  %>% select
 dim(igData)
 
 
-largestSuppliers <- read.csv("data/companyData/largestSuppliersWithWeather.csv") %>% select(-X)  
+largestSuppliers <- read.csv("data/companyData/largestSuppliersWithWeather_more500K.csv") %>% select(-X)  
 # allSuppliers     <- read.csv("data/companyData/allSuppliersWithWeather.csv")  %>% select(-X)  
 # allSupplierData.to_csv("../../data/companyData/allSupplierData.csv")
 
 ########################################################################################################################
 # clean the data, first pass 
-data <- largestSuppliers 
+data <- igData 
 dim(data)
 
 
@@ -67,21 +67,20 @@ goodsData = data  %>%  mutate(ageTercile    = ntile(earliestYear,3),
   
   
   # for direct effects
-  # mutate(extremeHeat   = temp_zipQuarterquant_0.95   + lag1_temp_zipQuarterquant_0.95,
-  # extremePrecip = precip_zipQuarterquant_0.95 + lag1_precip_zipQuarterquant_0.95,
-  # tempTercile   = ntile(quarterly_avg_temp,2), 
-  #   precipTercile = ntile(quarterly_avg_precip,2),
-  #   firmConcTercile = ntile(locationFracOfEmployees,2)) %>%
-  
+   mutate(extremeHeat   = temp_zipQuarter95   + lag1_temp_zipQuarter95,
+   extremePrecip = precip_zipQuarter95 + lag1_precip_zipQuarter95,
+   tempTercile   = ntile(quarterly_avg_temp,2), 
+     precipTercile = ntile(quarterly_avg_precip,2))
+  # firmConcTercile = ntile(locationFracOfEmployees,2)
   # for indirect effects
-  mutate(supplier_extremeHeat   = supplier_temp_zipQuarterquant_0.95   + supplier_lag1_temp_zipQuarterquant_0.95,
-         supplier_extremePrecip = supplier_precip_zipQuarterquant_0.95 + supplier_lag1_precip_zipQuarterquant_0.95,
-         supplierTempTercile   = ntile(supplier_quarterly_avg_temp,3),
-         supplierPrecipTercile = ntile(supplier_quarterly_avg_precip,3))
+  # mutate(supplier_extremeHeat   = supplier_temp_zipQuarterquant_0.95   + supplier_lag1_temp_zipQuarterquant_0.95,
+  #        supplier_extremePrecip = supplier_precip_zipQuarterquant_0.95 + supplier_lag1_precip_zipQuarterquant_0.95,
+  #        supplierTempTercile   = ntile(supplier_quarterly_avg_temp,3),
+  #        supplierPrecipTercile = ntile(supplier_quarterly_avg_precip,3))
 
   
   
-write.csv(goodsData,"data/companyData/goodsData_largestSupplierData.csv")
+write.csv(goodsData,"data/companyData/goodsData_igData.csv")
 
 
 
