@@ -15,13 +15,17 @@ igData           <- read.csv("data/companyData/igWithWeather.csv") #  %>% select
 dim(igData)
 
 
-largestSuppliers <- read.csv("data/companyData/largestSuppliersWithWeather_more500K.csv") %>% select(-X)  
-# allSuppliers     <- read.csv("data/companyData/allSuppliersWithWeather.csv")  %>% select(-X)  
-# allSupplierData.to_csv("../../data/companyData/allSupplierData.csv")
+largestSuppliers <- read.csv("data/companyData/largestSuppliersWithWeather_more500K.csv") %>% select(-X)
+
+
+
+allSuppliers     <- read.csv("data/companyData/allSupplierData.csv")  %>% select(-X)  
+
+
 
 ########################################################################################################################
 # clean the data, first pass 
-data <- igData 
+data <- allSuppliers 
 dim(data)
 
 
@@ -67,22 +71,26 @@ goodsData = data  %>%  mutate(ageTercile    = ntile(earliestYear,3),
   
   
   # for direct effects
-   mutate(extremeHeat   = temp_zipQuarter95   + lag1_temp_zipQuarter95,
-   extremePrecip = precip_zipQuarter95 + lag1_precip_zipQuarter95,
-   tempTercile   = ntile(quarterly_avg_temp,2), 
-     precipTercile = ntile(quarterly_avg_precip,2))
+    mutate(extremeHeat   = temp_zipQuarter95   + lag1_temp_zipQuarter95,
+    heat90Plus    = days90Plus + lag1_days90Plus,
+    streak90Plus  = streak90Plus + lag1_streak90Plus,
+    extremePrecip = precip_zipQuarter95 + lag1_precip_zipQuarter95,
+    tempTercile   = ntile(quarterly_avg_temp,3), 
+    precipTercile = ntile(quarterly_avg_precip,3))
   # firmConcTercile = ntile(locationFracOfEmployees,2)
   # for indirect effects
-  # mutate(supplier_extremeHeat   = supplier_temp_zipQuarterquant_0.95   + supplier_lag1_temp_zipQuarterquant_0.95,
-  #        supplier_extremePrecip = supplier_precip_zipQuarterquant_0.95 + supplier_lag1_precip_zipQuarterquant_0.95,
-  #        supplierTempTercile   = ntile(supplier_quarterly_avg_temp,3),
-  #        supplierPrecipTercile = ntile(supplier_quarterly_avg_precip,3))
+   # mutate(supplier_extremeHeat   = supplier_temp_zipQuarter_95   + supplier_lag1_temp_zipQuarter_95,
+   #        supplier_heat90Plus    = supplier_days90Plus + supplier_lag1_days90Plus,
+   #        supplier_streak90Plus  = supplier_streak90Plus + supplier_lag1_streak90Plus,
+   #        supplier_extremePrecip = supplier_precip_zipQuarter_95 + supplier_lag1_precip_zipQuarter_95,
+   #        supplierTempTercile    = ntile(supplier_quarterly_avg_temp,3),
+   #        supplierPrecipTercile  = ntile(supplier_quarterly_avg_precip,3))
 
   
   
-write.csv(goodsData,"data/companyData/goodsData_igData.csv")
+write.csv(goodsData,"data/companyData/goodsData_largestSupplierData.csv")
 
-
+dim(goodsData)
 
 for (col in colnames(goodsData)){
   print(col)
@@ -93,6 +101,6 @@ for (col in colnames(goodsData)){
 # add a couple of these: gvkey_calQtr, ageTercile_Qtr, profTercile_Qtr, sizeTercile_Qtr
 
 # 'firmQtr', 
-# goodsData_withDummies = dummy_cols(goodsData, select_columns =  c('precipBin', 'heatBin'), remove_first_dummy = TRUE) # dummy_cols(goodsData, select_columns =  c('gvkey', 'precipBin', 'heatBin', 'indQtr','ageTercile', 'sizeTercile', 'profitTercile'), remove_first_dummy = TRUE)
+# 
 # write.csv(goodsData,"data/companyData/goodsData_igData.csv")
 
