@@ -15,7 +15,7 @@ igData           <- read.csv("data/companyData/igWithWeather.csv") #  %>% select
 dim(igData)
 
 
-largestSuppliers <- read.csv("data/companyData/largestSuppliersWithWeather_more500K.csv") %>% select(-X)
+# largestSuppliers <- read.csv("data/companyData/largestSuppliersWithWeather_more500K.csv") %>% select(-X)
 
 
 
@@ -51,9 +51,9 @@ goodsData = data  %>%  mutate(ageTercile    = ntile(earliestYear,3),
          lnRevNormd           = log(revNormd),
          lnStockClose         = log(priceClose + 1),
          
-         lnNetIncNormd        = case_when(((netIncome + 0.001)/(assetsLast + 0.001) <= 0) ~ -10,
+         lnNetIncNormd        = case_when(((netIncome + 0.001)/(assetsLast + 0.001) <= 0) ~ -1,
                                          ((netIncome + 0.001)/(assetsLast + 0.001)  > 0) ~ log(netIncome/assetsLast + 1)),
-         lnOpIncNormd         = case_when(((opInc_afDep + 0.001)/(assetsLast + 0.001) <= 0) ~ -10,
+         lnOpIncNormd         = case_when(((opInc_afDep + 0.001)/(assetsLast + 0.001) <= 0) ~ -1,
                                          ((opInc_afDep + 0.001)/(assetsLast + 0.001) > 0) ~ log(opInc_afDep/assetsLast + 1)),
          
          lnCostNormd         = Winsorize(lnCostNormd, probs = c(0.01, 0.99),  na.rm = TRUE),
@@ -72,23 +72,24 @@ goodsData = data  %>%  mutate(ageTercile    = ntile(earliestYear,3),
   
   # for direct effects
     mutate(extremeHeat   = temp_zipQuarter95   + lag1_temp_zipQuarter95,
-    heat90Plus    = days90Plus + lag1_days90Plus,
-    streak90Plus  = streak90Plus + lag1_streak90Plus,
-    extremePrecip = precip_zipQuarter95 + lag1_precip_zipQuarter95,
-    tempTercile   = ntile(quarterly_avg_temp,3), 
-    precipTercile = ntile(quarterly_avg_precip,3))
+      heat90Plus    = days90Plus + lag1_days90Plus,
+      streak90Plus  = streak90Plus + lag1_streak90Plus,
+      extremePrecip = precip_zipQuarter95 + lag1_precip_zipQuarter95,
+      tempTercile   = ntile(quarterly_avg_temp,3), 
+      precipTercile = ntile(quarterly_avg_precip,3))
   # firmConcTercile = ntile(locationFracOfEmployees,2)
   # for indirect effects
    # mutate(supplier_extremeHeat   = supplier_temp_zipQuarter_95   + supplier_lag1_temp_zipQuarter_95,
-   #        supplier_heat90Plus    = supplier_days90Plus + supplier_lag1_days90Plus,
-   #        supplier_streak90Plus  = supplier_streak90Plus + supplier_lag1_streak90Plus,
-   #        supplier_extremePrecip = supplier_precip_zipQuarter_95 + supplier_lag1_precip_zipQuarter_95,
-   #        supplierTempTercile    = ntile(supplier_quarterly_avg_temp,3),
-   #        supplierPrecipTercile  = ntile(supplier_quarterly_avg_precip,3))
+   #         supplier_heat90Plus    = supplier_days90Plus + supplier_lag1_days90Plus,
+   #         supplier_streak90Plus  = supplier_streak90Plus + supplier_lag1_streak90Plus,
+   #         supplier_extremePrecip = supplier_precip_zipQuarter_95 + supplier_lag1_precip_zipQuarter_95,
+   #         supplierTempTercile    = ntile(supplier_quarterly_avg_temp,3),
+   #         supplierPrecipTercile  = ntile(supplier_quarterly_avg_precip,3))
 
-  
-  
-write.csv(goodsData,"data/companyData/goodsData_largestSupplierData.csv")
+
+# write.csv(goodsData,"data/companyData/goodsData_largestSupplierData.csv")
+write.csv(goodsData,"data/companyData/goodsData_largestSupplierData_dirEffects.csv")
+
 
 dim(goodsData)
 
