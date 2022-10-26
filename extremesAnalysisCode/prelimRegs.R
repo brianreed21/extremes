@@ -25,7 +25,7 @@ allSuppliers     <- read.csv("data/companyData/allSupplierData.csv")  %>% select
 
 ########################################################################################################################
 # clean the data, first pass 
-data <- allSuppliers 
+data <- igData 
 dim(data)
 
 
@@ -76,7 +76,12 @@ goodsData = data  %>%  mutate(ageTercile    = ntile(earliestYear,3),
       streak90Plus  = streak90Plus + lag1_streak90Plus,
       extremePrecip = precip_zipQuarter95 + lag1_precip_zipQuarter95,
       tempTercile   = ntile(quarterly_avg_temp,3), 
-      precipTercile = ntile(quarterly_avg_precip,3))
+      precipTercile = ntile(quarterly_avg_precip,3),
+      extremeHeat_wtd =  empWt_temp_zipQuarter_95   + empWt_lag1_temp_zipQuarter_95,
+      extremePrecip_wtd = empWt_precip_zipQuarter_95 + empWt_lag1_precip_zipQuarter_95,
+      extremeHeat_max =  empMx_temp_zipQuarter_95   + empMx_lag1_temp_zipQuarter_95,
+      extremePrecip_max = empMx_precip_zipQuarter_95 + empMx_lag1_precip_zipQuarter_95)
+
   # firmConcTercile = ntile(locationFracOfEmployees,2)
   # for indirect effects
    # mutate(supplier_extremeHeat   = supplier_temp_zipQuarter_95   + supplier_lag1_temp_zipQuarter_95,
@@ -86,20 +91,37 @@ goodsData = data  %>%  mutate(ageTercile    = ntile(earliestYear,3),
    #         supplierTempTercile    = ntile(supplier_quarterly_avg_temp,3),
    #         supplierPrecipTercile  = ntile(supplier_quarterly_avg_precip,3))
 
+start = Sys.time()
+
+
+
+Sys.time() - start
+
+
 
 # write.csv(goodsData,"data/companyData/goodsData_largestSupplierData.csv")
-write.csv(goodsData,"data/companyData/goodsData_largestSupplierData_dirEffects.csv")
+write.csv(goodsData,"data/companyData/goodsData.csv")
 
 
 dim(goodsData)
 
-for (col in colnames(goodsData)){
-  print(col)
-}
 
 ##################################################################
 # run regressions across a few of the industries in particular
-# add a couple of these: gvkey_calQtr, ageTercile_Qtr, profTercile_Qtr, sizeTercile_Qtr
+# add a couple of these: gvkey_calQtr, ageTercile_Qtr, profTercile_Qtr, sizeTercile_Qtr 
+
+# followed https://www.kellogg.northwestern.edu/faculty/petersen/htm/papers/se/se_programming.htm to 
+# https://sites.google.com/site/waynelinchang/r-code
+
+start = Sys.time()
+summary(felm(lnRevNormd ~ extremePrecip + factor(gvkey) + factor(indGroup) + factor(yearQtr), data = goodsData))
+Sys.time() - start
+
+
+
+
+summary(felm(lnRevNormd ~ extremePrecip + factor(gvkey) + factor(indGroup) + factor(yearQtr) | 0 | 0 | gvkey, data = goodsData))
+
 
 # 'firmQtr', 
 # 
