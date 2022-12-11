@@ -22,47 +22,65 @@ dim(data)
 
 data = data[complete.cases(data$assetsLast) & complete.cases(data$profitTercile) & complete.cases(data$ageTercile) & complete.cases(data$sizeTercile),] %>% 
   filter(indGroup %in% c('agForFish','construction','manu','mining','transportUtilities','wholesale','retail')) %>%
-  mutate(totalRevenue = case_when(totalRevenue < 0 ~ 0, totalRevenue > 0 ~ totalRevenue)) 
+  mutate(totalRevenue = case_when(totalRevenue < 0 ~ 0, totalRevenue > 0 ~ totalRevenue),
+         costGoodsSold = case_when(costGoodsSold < 0 ~ 0, costGoodsSold > 0 ~ costGoodsSold))
+# %>% filter(assets > 0, assetsLast > 0) 
 dim(data)
+
+data %>% mutate(log((opInc_afDep)/(assetsLast) + 1))
+
+sum(data$netIncome/data$assetsLast + 1<0, na.rm = TRUE)/dim(data)[1]
 
 
 ########################################################################################################################
 # run this to get data across all firms
-goodsData = data  %>%  mutate(ageTercile    = ntile(earliestYear,3),
+goodsData = data  %>%  
+  mutate(ageTercile    = ntile(earliestYear,3),
          profitTercile = ntile(roa_lagged,3),
          sizeTercile   = ntile(assetsLagged,3),
          
   # this worked very well when it was netIncome/(assetsLast + 0.001), or same for
   # vars other than netIncome
-         revNormd    = (totalRevenue + 0.001)/(assetsLast + 0.001),
-         costNormd   = (costGoodsSold + 0.001)/(assetsLast + 0.001),
-         netIncNormd = (netIncome + 0.001)/(assetsLast + 0.001),
-         opIncNormd  = (opInc_afDep + 0.001)/(assetsLast + 0.001),
+         lnRev  = log(totalRevenue + 1),
+         lnCost = log(costGoodsSold + 1),
   
+         revNormd      = (totalRevenue)/(assetsLast),
+         costNormd     = (costGoodsSold)/(assetsLast),
+         netIncNormd   = (netIncome)/(assetsLast),
+         opIncAfNormd  = (opInc_afDep)/(assetsLast),
+         opIncBefNormd = (opInc_befDep)/(assetsLast),
   
-  
-         lnCostNormd          = log(costNormd),
-         lnRevNormd           = log(revNormd),
-         lnStockClose         = log(priceClose + 1),
-         
-         lnNetIncNormd        = case_when((netIncNormd <= 0) ~ -1,
-                                         (netIncNormd  > 0) ~ log(netIncome/assetsLast + 1)),
-         lnOpIncNormd         = case_when((opIncNormd <= 0) ~ -1,
-                                         ((opIncNormd + 0.001)/(assetsLast + 0.001) > 0) ~ log(opInc_afDep/assetsLast + 1)),
-         
+         netIncChange  = (netIncome - netIncomeLast)/(1+netIncomeLast),
+         opIncBefChange = (opInc_befDep - opInc_befDepLast)/(1+opInc_befDepLast),
+         opIncAfChange  = (opInc_afDep - opInc_afDepLast)/(1+opInc_afDepLast),
+         revChange      = (totalRevenue - totalRevenueLast)/(1+totalRevenueLast),
+         costChange     = (costGoodsSold - costGoodsSoldLast)/(1+costGoodsSoldLast),
   
          costNormd         = Winsorize(costNormd, probs = c(0.01, 0.99),  na.rm = TRUE),
          revNormd          = Winsorize(revNormd, probs = c(0.01, 0.99),   na.rm = TRUE),
-         netIncNormd       = Winsorize(netIncNormd, probs = c(0.01, 0.99),na.rm = TRUE),
-         opIncNormd        = Winsorize(opIncNormd, probs = c(0.01, 0.99), na.rm = TRUE),
+         netIncNormd       = Winsorize(netIncNormd, probs = c(0.025, 0.99),na.rm = TRUE),
+         opIncAfNormd      = Winsorize(opIncAfNormd, probs = c(0.025, 0.99), na.rm = TRUE),
+         opIncBefNormd     = Winsorize(opIncBefNormd, probs = c(0.025, 0.99), na.rm = TRUE)) %>%
   
-  
-         lnCostNormd         = Winsorize(lnCostNormd, probs = c(0.01, 0.99),  na.rm = TRUE),
-         lnRevNormd          = Winsorize(lnRevNormd, probs = c(0.01, 0.99),   na.rm = TRUE),
-         lnNetIncNormd       = Winsorize(lnNetIncNormd, probs = c(0.01, 0.99),na.rm = TRUE),
-         lnOpIncNormd        = Winsorize(lnOpIncNormd, probs = c(0.01, 0.99), na.rm = TRUE),
-         lnStockClose        = Winsorize(lnStockClose, probs = c(0.01, 0.99), na.rm = TRUE),
+  mutate(lnCostNormd          = log(costNormd + 1),
+         lnRevNormd           = log(revNormd  + 1),
+         lnStockClose         = log(priceClose + 1),
+         lnNetIncNormd        = log(netIncNormd + 1),
+         lnOpIncAfNormd       = log(opIncAfNormd + 1),
+         lnOpIncBefNormd      = log(opIncBefNormd + 1),
          
+         # lnCostNormd         = Winsorize(lnCostNormd, probs = c(0.01, 0.99),  na.rm = TRUE),
+         # lnRevNormd          = Winsorize(lnRevNormd, probs = c(0.01, 0.99),   na.rm = TRUE),
+         # lnNetIncNormd       = Winsorize(lnNetIncNormd, probs = c(0.01, 0.99),na.rm = TRUE),
+         # lnOpIncNormd        = Winsorize(lnOpIncNormd, probs = c(0.01, 0.99), na.rm = TRUE),
+         # lnStockClose        = Winsorize(lnStockClose, probs = c(0.01, 0.99), na.rm = TRUE),
+         
+         netIncChange        = Winsorize(netIncChange, probs = c(0.01, 0.99),  na.rm = TRUE),
+         opIncBefChange      = Winsorize(opIncBefChange, probs = c(0.01, 0.99),   na.rm = TRUE),
+         opIncAfChange       = Winsorize(opIncAfChange, probs = c(0.01, 0.99),na.rm = TRUE),
+         revChange           = Winsorize(revChange, probs = c(0.01, 0.99), na.rm = TRUE),
+         costChange          = Winsorize(costChange, probs = c(0.01, 0.99), na.rm = TRUE),
+  
          yearQtr = paste0(year,"_",qtr), firmQtr = paste0(gvkey,'_',qtr), 
          ageQtr  = paste0(ageTercile,"_",yearQtr),
          sizeQtr  = paste0(sizeTercile,"_",yearQtr), 
@@ -77,8 +95,8 @@ goodsData = data  %>%  mutate(ageTercile    = ntile(earliestYear,3),
       extremeHeatQuarterly_max   = empMx_temp_zipQuarter_95   + empMx_lag1_temp_zipQuarter_95,
       extremePrecipQuarterly_max = empMx_precip_zipQuarter_95 + empMx_lag1_precip_zipQuarter_95,
       
-      extremeHeatQuarterly_wtd   = empWt_temp_zipQuarter_95   + empWt_lag1_temp_zipQuarter_95,
-      extremePrecipQuarterly_wtd = empWt_precip_zipQuarter_95      + empWt_lag1_precip_zipQuarter_95,
+      extremeHeatQuarterly_wtd   = empWt_temp_zipQuarter95        + empWt_lag1_temp_zipQuarter95,
+      extremePrecipQuarterly_wtd = empWt_precip_zipQuarter95      + empWt_lag1_precip_zipQuarter95,
       
       heatAnomalyQuarterly   = temp_zipQuarter50     + lag1_temp_zipQuarter50,
       precipAnomalyQuarterly = precip_zipQuarter50   + lag1_precip_zipQuarter50,
@@ -152,8 +170,22 @@ goodsData = data  %>%  mutate(ageTercile    = ntile(earliestYear,3),
          precipDecile_byQtr = ntile(quarterly_avg_precip,10))
 
 goodsData <- goodsData[complete.cases(goodsData$empMx_temp_zipQuarter_95) & 
-                         complete.cases(goodsData$lnOpIncNormd) &
+                         complete.cases(goodsData$lnOpIncBefNormd) &
+                         complete.cases(goodsData$lnOpIncAfNormd) & 
+                         complete.cases(goodsData$lnNetIncNormd) &
                          complete.cases(goodsData$lnRevNormd) &
-                         complete.cases(goodsData$lnCostNormd),]
+                         complete.cases(goodsData$lnCostNormd),]  
+                         # 
+                         # complete.cases(goodsData$opIncAfChange) & 
+                         # complete.cases(goodsData$opIncBefChange) &
+                         # complete.cases(goodsData$revChange) &
+                         # complete.cases(goodsData$costChange)
+                         # complete.cases(goodsData$opIncAfNormd) & 
+                         # complete.cases(goodsData$opIncBefNormd)]
 
-write.csv(goodsData,"data/companyData/goodsData.csv")
+write.csv(goodsData,"data/companyData/goodsData.csv") 
+sum(goodsData$opIncChange == '')
+# revNormd    = (totalRevenue)/(assetsLast),
+# costNormd   = (costGoodsSold)/(assetsLast),
+# netIncNormd = (netIncome)/(assetsLast),
+# opIncNormd  = (opInc_afDep)/(assetsLast),
