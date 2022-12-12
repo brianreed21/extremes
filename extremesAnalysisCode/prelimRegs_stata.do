@@ -4,13 +4,41 @@ clear all
 
 set maxvar 100000
 import delimited goodsData_withIndDefs
-
+* import delimited goodsData
 
 
 
 encode yearqtr, generate(time)
 encode indgroup, generate(industry)
 encode indseason, generate(indSeason)
+
+
+
+*************
+* do a bunch of tests here
+quietly regress lnopincnormd c.excessheat90plusemp i.industry#i.qtr i.time i.gvkey, cluster(gvkey)
+margins, dydx(excessheat90plusemp) post
+
+quietly regress lnopincnormdaf_take2 c.excessheat90plusemp i.industry#i.qtr i.time i.gvkey, cluster(gvkey)
+margins, dydx(excessheat90plusemp) post
+
+quietly regress lnopincnormdbef_take2 c.excessheat90plusemp i.industry#i.qtr i.time i.gvkey, cluster(gvkey)
+margins, dydx(excessheat90plusemp) post
+
+
+quietly regress lnopincnormd c.excessrainemp i.industry#i.qtr i.time i.gvkey, cluster(gvkey)
+margins, dydx(excessrainemp) post
+
+quietly regress lnopincnormdaf_take2 c.excessrainemp i.industry#i.qtr i.time i.gvkey, cluster(gvkey)
+margins, dydx(excessrainemp) post
+
+
+quietly regress lnopincnormdbef_take2 c.excessrain i.industry#i.qtr i.time i.gvkey, cluster(gvkey)
+margins, dydx(excessrain) post
+
+quietly regress lnopincnormdbef_take2 c.excessheat90plus i.industry#i.qtr i.time i.gvkey, cluster(gvkey)
+margins, dydx(excessheat90plus) post
+
 
 
 

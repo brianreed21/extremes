@@ -28,18 +28,17 @@ dim(data)
 
 ########################################################################################################################
 # run this to get data across all firms
-goodsData = data  %>%  mutate(ageTercile    = ntile(earliestYear,3),
+goodsData = data  %>%  mutate(
+         ageTercile    = ntile(earliestYear,3),
          profitTercile = ntile(roa_lagged,3),
          sizeTercile   = ntile(assetsLagged,3),
          
-  # this worked very well when it was netIncome/(assetsLast + 0.001), or same for
-  # vars other than netIncome
+         ###########################################################
+         # do this the old fashioned way: winsorize, etc
          revNormd    = (totalRevenue + 0.001)/(assetsLast + 0.001),
          costNormd   = (costGoodsSold + 0.001)/(assetsLast + 0.001),
          netIncNormd = (netIncome + 0.001)/(assetsLast + 0.001),
          opIncNormd  = (opInc_afDep + 0.001)/(assetsLast + 0.001),
-  
-  
   
          lnCostNormd          = log(costNormd),
          lnRevNormd           = log(revNormd),
@@ -62,6 +61,24 @@ goodsData = data  %>%  mutate(ageTercile    = ntile(earliestYear,3),
          lnNetIncNormd       = Winsorize(lnNetIncNormd, probs = c(0.01, 0.99),na.rm = TRUE),
          lnOpIncNormd        = Winsorize(lnOpIncNormd, probs = c(0.01, 0.99), na.rm = TRUE),
          lnStockClose        = Winsorize(lnStockClose, probs = c(0.01, 0.99), na.rm = TRUE),
+        
+        
+        
+         ##############################################################
+         # now do this the other way 
+         revNormd_take2     = (totalRevenue/assetsLast) + 1,
+         costNormd_take2    = (costGoodsSold/assetsLast) + 1,
+         netIncNormd_take2  = (netIncome/assetsLast) + 1,
+         opIncNormdAf_take2 = (opInc_afDep/assetsLast) + 1,
+         opIncNormdBef_take2 = (opInc_befDep/assetsLast) + 1,
+         
+         
+         lnCostNormd_take2       = log(Winsorize(costNormd_take2, probs     = c(0.01, 0.99),  na.rm = TRUE)),
+         lnRevNormd_take2        = log(Winsorize(revNormd_take2, probs      = c(0.01, 0.99),   na.rm = TRUE)),
+         lnNetIncNormd_take2     = log(Winsorize(netIncNormd_take2, probs   = c(0.025, 0.99),na.rm = TRUE)),
+         lnOpIncNormdAf_take2    = log(Winsorize(opIncNormdAf_take2, probs  = c(0.025, 0.99), na.rm = TRUE)),
+         lnOpIncNormdBef_take2   = log(Winsorize(opIncNormdBef_take2, probs = c(0.025, 0.99), na.rm = TRUE)),
+         
          
          yearQtr = paste0(year,"_",qtr), firmQtr = paste0(gvkey,'_',qtr), 
          ageQtr  = paste0(ageTercile,"_",yearQtr),
@@ -71,8 +88,8 @@ goodsData = data  %>%  mutate(ageTercile    = ntile(earliestYear,3),
          ) %>%
   
   # for direct effects
-    mutate(extremeHeatQuarterly   = temp_zipQuarter95   + lag1_temp_zipQuarter95,
-      extremePrecipQuarterly = precip_zipQuarter95      + lag1_precip_zipQuarter95,
+    mutate(extremeHeatQuarterly  = temp_zipQuarter95   + lag1_temp_zipQuarter95,
+      extremePrecipQuarterly     = precip_zipQuarter95      + lag1_precip_zipQuarter95,
       
       extremeHeatQuarterly_max   = empMx_temp_zipQuarter_95   + empMx_lag1_temp_zipQuarter_95,
       extremePrecipQuarterly_max = empMx_precip_zipQuarter_95 + empMx_lag1_precip_zipQuarter_95,
@@ -98,8 +115,7 @@ goodsData = data  %>%  mutate(ageTercile    = ntile(earliestYear,3),
       precip95National     = precip_annual_95 + lag1_precip_annual_95,
       precip95National_wtd = empWt_precip_annual_95 + empWt_lag1_precip_annual_95,
       precip95National_max = empMx_precip_annual_95 + empMx_lag1_precip_annual_95,
-      # heat95National   = temp_annual_95   + lag1_temp_annual_95,
-      
+
       precip99National = precip_annual_99 + lag1_precip_annual_99,
       heat99National   = temp_annual_99   + lag1_temp_annual_99,
       
@@ -154,6 +170,7 @@ goodsData = data  %>%  mutate(ageTercile    = ntile(earliestYear,3),
 goodsData <- goodsData[complete.cases(goodsData$empMx_temp_zipQuarter_95) & 
                          complete.cases(goodsData$lnOpIncNormd) &
                          complete.cases(goodsData$lnRevNormd) &
-                         complete.cases(goodsData$lnCostNormd),]
+                         complete.cases(goodsData$lnCostNormd) & 
+                         (goodsData$lnOpIncNormdBef_take2 < Inf), ]
 
 write.csv(goodsData,"data/companyData/goodsData.csv")
