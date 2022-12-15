@@ -10,21 +10,26 @@ setwd("~/Documents/supplyChain")
 # load: changes data, largest supplier data, and all supplier data
 igData           <- read.csv("data/companyData/igWithWeather.csv") #  %>% select(-X, -opInc_befDep) # before depreciation, things seem a bit more scarce
 
-# largestSuppliers <- read.csv("data/companyData/largestSuppliersWithWeather_more500K.csv") %>% select(-X)
-# allSuppliers     <- read.csv("data/companyData/allSupplierData.csv")  %>% select(-X)  
+allSuppliers     <- read.csv("data/companyData/allIndirectWeather.csv")  %>% select(-X)  
+
+dirIndir         <- read.csv("data/companyData/allDirIndir.csv") %>% select(-X)
+
 
 
 ########################################################################################################################
 # clean the data, first pass 
-data <- igData 
+data <- dirIndir # igData 
 dim(data)
 
 
 data = data[complete.cases(data$assetsLast) & complete.cases(data$profitTercile) & complete.cases(data$ageTercile) & complete.cases(data$sizeTercile),] %>% 
   filter(indGroup %in% c('agForFish','construction','manu','mining','transportUtilities','wholesale','retail')) %>%
   mutate(totalRevenue = case_when(totalRevenue < 0 ~ 0, totalRevenue > 0 ~ totalRevenue)) 
-dim(data)
 
+
+dim(data)
+quantile(goodsData$opIncNormd, probs = c(0.01,0.025,0.05,0.95,0.975,0.99))
+quantile(goodsData$opIncNormdBef_take2, probs = c(0.01,0.025,0.05,0.95,0.975,0.99))
 
 ########################################################################################################################
 # run this to get data across all firms
@@ -165,12 +170,47 @@ goodsData = data  %>%  mutate(
          precipQuintile_byQtr = ntile(quarterly_avg_precip,5),
          
          tempDecile_byQtr   = ntile(quarterly_avg_temp,10), 
-         precipDecile_byQtr = ntile(quarterly_avg_precip,10))
+         precipDecile_byQtr = ntile(quarterly_avg_precip,10)) %>%
+  
+  
+  # next for indirect effects
+  mutate(worstSupplier_excessHeat90PlusEmp   = worst_supplier_empWt_days90Plus   + worst_supplier_empWt_lag1_days90Plus - 9,
+         largestSupplier_excessHeat90PlusEmp = largest_supplier_empWt_days90Plus + largest_supplier_empWt_lag1_days90Plus - 9,
+         wtdSupplier_excessHeat90PlusEmp     = wtd_supplier_empWt_days90Plus     + wtd_supplier_empWt_lag1_days90Plus - 9,
+         
+         worstSupplier_excessRainEmp   = worst_supplier_empWt_precip_zipQuarter_95   + worst_supplier_empWt_precip_zipQuarter_95 - 9,
+         largestSupplier_excessRainEmp = largest_supplier_empWt_precip_zipQuarter_95 + largest_supplier_empWt_precip_zipQuarter_95 - 9,
+         wtdSupplier_excessRainEmp     = wtd_supplier_empWt_precip_zipQuarter_95     + wtd_supplier_empWt_precip_zipQuarter_95 - 9,
+         
+         worstSupplier_excessHeat90Plus   = worst_supplier_days90Plus   + worst_supplier_lag1_days90Plus - 9,
+         largestSupplier_excessHeat90Plus = largest_supplier_days90Plus + largest_supplier_lag1_days90Plus - 9,
+         wtdSupplier_excessHeat90Plus     = wtd_supplier_days90Plus     + wtd_supplier_lag1_days90Plus - 9,
+         
+         worstSupplier_excessRain   = worst_supplier_precip_zipQuarter_95   + worst_supplier_precip_zipQuarter_95 - 9,
+         largestSupplier_excessRain = largest_supplier_precip_zipQuarter_95 + largest_supplier_precip_zipQuarter_95 - 9,
+         wtdSupplier_excessRain     = wtd_supplier_precip_zipQuarter_95     + wtd_supplier_precip_zipQuarter_95 - 9)
 
 goodsData <- goodsData[complete.cases(goodsData$empMx_temp_zipQuarter_95) & 
                          complete.cases(goodsData$lnOpIncNormd) &
                          complete.cases(goodsData$lnRevNormd) &
                          complete.cases(goodsData$lnCostNormd) & 
-                         (goodsData$lnOpIncNormdBef_take2 < Inf), ]
-
+                         (goodsData$lnOpIncNormdBef_take2 < Inf) & 
+                         (goodsData$opIncNormdBef_take2   > -Inf) & complete.cases(goodsData$gvkey), ]
+head(goodsData)
 write.csv(goodsData,"data/companyData/goodsData.csv")
+
+
+
+write.csv(goodsData[goodsData$isSupplier == 'True',],"data/companyData/supplierGoodsData.csv")
+
+
+
+indirSubset = goodsData[complete.cases(goodsData$worst_supplier_empWt_days90Plus), ]
+dim(indirSubset)
+
+write.csv(indirSubset,"data/companyData/indirSubset.csv")
+
+
+supplierSubset = goodsData[]
+
+unique(indirSubset$indGroup)
