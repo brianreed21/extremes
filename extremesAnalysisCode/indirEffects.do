@@ -7,15 +7,7 @@ set maxvar 100000
 clear all
 import delimited supplierGoodsData, varnames(1)
 
-encode yearqtr, generate(time)
-encode indgroup, generate(industry)
 
-quietly regress lnopincnormdbef_take2 c.excessheat90plusemp i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
-margins, dydx(excessheat90plusemp) post
-
-
-quietly regress lnopincnormdbef_take2 c.excessrainemp i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
-margins, dydx(excessrainemp) post
 
 
 **************************************
@@ -32,40 +24,36 @@ encode indgroup, generate(industry)
 
 
 
+
 **************************************
 * do a bunch of tests here
-quietly regress lnopincnormdbef_take2 c.worstsupplier_excessheat90plusem i.industry#i.qtr i.time i.gvkey, cluster(gvkey)
+quietly regress opincnormdbef_take2 c.worstsupplier_excessheat90plusem i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
 margins, dydx(worstsupplier_excessheat90plusem) post
+outreg2 using reg1_indir.xls, append ctitle("heat - worst") label
 
-quietly regress lnopincnormdbef_take2 c.largestsupplier_excessheat90plus i.industry#i.qtr i.time i.gvkey, cluster(gvkey)
+quietly regress lnopincnormdbef_take2 c.largestsupplier_excessheat90plus i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
 margins, dydx(largestsupplier_excessheat90plus) post
+outreg2 using reg1_indir.xls, append ctitle("heat - largest") label
 
-quietly regress lnopincnormdbef_take2 c.wtdsupplier_excessheat90plusemp i.industry#i.qtr i.time i.gvkey, cluster(gvkey)
+quietly regress lnopincnormdbef_take2 c.wtdsupplier_excessheat90plusemp i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
 margins, dydx(wtdsupplier_excessheat90plusemp) post
+outreg2 using reg1_indir.xls, append ctitle("heat - wtd") label
 
 
-* just the hqs here
-quietly regress lnopincnormdbef_take2 c.worstsupplier_excessheat90plus i.industry#i.qtr i.time i.gvkey, cluster(gvkey)
-margins, dydx(worstsupplier_excessheat90plus) post
 
-quietly regress lnopincnormdbef_take2 c.wtdsupplier_excessheat90plus i.industry#i.qtr i.time i.gvkey, cluster(gvkey)
-margins, dydx(wtdsupplier_excessheat90plus) post
-
- 
 **************
-* do a bunch of tests here
-
-
 quietly regress lnopincnormdbef_take2 c.worstsupplier_excessrainemp i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
 margins, dydx(worstsupplier_excessrainemp) post
+outreg2 using reg1_indir.xls, append ctitle("rain - worst") label
 
 
 quietly regress lnopincnormdbef_take2 c.largestsupplier_excessrainemp i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
 margins, dydx(largestsupplier_excessrainemp) post
+outreg2 using reg1_indir.xls, append ctitle("rain - largest") label
 
 
 
 quietly regress lnopincnormdbef_take2 c.wtdsupplier_excessrainemp i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
 margins, dydx(wtdsupplier_excessrainemp) post
-
+outreg2 using reg1_indir.xls, append ctitle("rain - wtd") label
 
