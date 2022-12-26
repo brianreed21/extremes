@@ -25,6 +25,7 @@ dim(data)
 data = data[complete.cases(data$assetsLast) & complete.cases(data$profitTercile) & complete.cases(data$ageTercile) & complete.cases(data$sizeTercile),] %>% 
   filter(indGroup %in% c('agForFish','construction','manu','mining','transportUtilities','wholesale','retail')) %>%
   mutate(totalRevenue = case_when(totalRevenue < 0 ~ 0, totalRevenue > 0 ~ totalRevenue),
+         costGoodsSold = case_when(costGoodsSold < 0 ~ 0, costGoodsSold > 0 ~ costGoodsSold),
          ) 
 
 
@@ -42,6 +43,9 @@ goodsData = data  %>%  mutate(
          netIncNormd = (netIncome + 0.001)/(assetsLast + 0.001),
          opIncNormd  = (opInc_afDep + 0.001)/(assetsLast + 0.001),
   
+         lnRev  = log(totalRevenue + 0.001),
+         lnCost = log(costGoodsSold + 0.001),
+         
          lnCostNormd          = log(costNormd),
          lnRevNormd           = log(revNormd),
          lnStockClose         = log(priceClose + 1),
@@ -194,28 +198,31 @@ goodsData = data  %>%  mutate(
          wtdSupplier_excessRain     = wtd_supplier_precip_zipQuarter_95     + wtd_supplier_precip_zipQuarter_95 - 9)
 
 goodsData <- goodsData[complete.cases(goodsData$empMx_temp_zipQuarter_95) & 
-                         complete.cases(goodsData$lnOpIncNormd) &
-                         complete.cases(goodsData$lnRevNormd) &
-                         complete.cases(goodsData$lnCostNormd) & 
+                         complete.cases(goodsData$lnOpIncNormdBef_take2) &
+                         complete.cases(goodsData$lnRevNormd_take2) &
+                         complete.cases(goodsData$lnCostNormd_take2) & 
                          (goodsData$lnOpIncNormdBef_take2 < Inf) & 
                          (goodsData$opIncNormdBef_take2   > -Inf) & 
                          ((goodsData$opIncNormdBef_take2  < Inf)) & 
                          complete.cases(goodsData$gvkey), ]
-head(goodsData)
+
+freqWeights = goodsData %>%
+  count(indGroup, sizeTercile) %>%
+  mutate(freq = round(n / sum(n), 4)) %>% select(-n) %>% merge(
+    (goodsData %>% filter(isSupplier == "True") %>%
+       count(indGroup, sizeTercile) %>%
+       mutate(freq = round(n / sum(n), 4)) %>% 
+       select(-n) %>% rename(freqSuppliers = freq))) %>% 
+  mutate(pweights = freq/freqSuppliers) %>% select(-c(freq,freqSuppliers))
+
+dim(goodsData)
+
+goodsData = goodsData %>% merge(freqWeights, how = 'left')     
+
+dim(goodsData)
+
+
 write.csv(goodsData,"data/companyData/goodsData.csv")
-
-
 
 write.csv(goodsData[goodsData$isSupplier == 'True',],"data/companyData/supplierGoodsData.csv")
 
-
-
-indirSubset = goodsData[complete.cases(goodsData$worst_supplier_empWt_days90Plus), ]
-dim(indirSubset)
-
-write.csv(indirSubset,"data/companyData/indirSubset.csv")
-
-
-supplierSubset = goodsData[]
-
-unique(indirSubset$indGroup)
