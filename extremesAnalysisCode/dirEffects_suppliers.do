@@ -20,17 +20,12 @@ encode gsectordesc, generate(industrygics)
 
 
 *************
-quietly regress lnopincnormdbef_take2 c.excessheat90plusemp i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey) 
-margins, dydx(excessheat90plusemp) post
+foreach weather of varlist excessrain excessrainemp excessheat90plus excessheat90plusemp{
+	foreach outcome of varlist revnormd costnormd lnstockclose lnrevnormd lncostnormd lnrevnormd_take2 lncostnormd_take2  {
+		display as text %12s "`outcome'"
+		quietly regress `outcome' c.`weather' i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile [pweight = pweights], cluster(gvkey)
+		margins, dydx(`weather') post
+		outreg2 using reg1_diffOutcomes.xls, append ctitle("`weather' `outcome'") label
+	}
 
-
-
-
-quietly regress lnopincnormdaf_take2 c.excessrainemp i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
-margins, dydx(excessrainemp) post
-
-quietly regress lnrevnormd_take2 c.excessrainemp i.industry#i.qtr i.time i.gvkey [pweight = pweights], cluster(gvkey)
-margins, dydx(excessrainemp) post
-
-quietly regress lncostnormd_take2 c.excessrainemp i.industry#i.qtr i.time i.gvkey [pweight = pweights], cluster(gvkey)
-margins, dydx(excessrainemp) post
+}

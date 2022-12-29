@@ -12,6 +12,7 @@ igData           <- read.csv("data/companyData/igWithWeather.csv") #  %>% select
 
 allSuppliers     <- read.csv("data/companyData/allIndirectWeather.csv")  %>% select(-X)  
 
+
 dirIndir         <- read.csv("data/companyData/allDirIndir.csv") %>% select(-X)
 estabAvgs         = read.csv("data/companyData/estabWtdWeather.csv") %>% select(-X)
 dirIndir <- merge(estabAvgs,dirIndir)
@@ -23,10 +24,12 @@ dim(data)
 
 
 data = data[complete.cases(data$assetsLast) & complete.cases(data$profitTercile) & complete.cases(data$ageTercile) & complete.cases(data$sizeTercile),] %>% 
-  filter(indGroup %in% c('agForFish','construction','manu','mining','transportUtilities','wholesale','retail')) %>%
+  # filter(indGroup %in% c('agForFish','construction','manu','mining','transportUtilities','wholesale','retail')) %>%
   mutate(totalRevenue = case_when(totalRevenue < 0 ~ 0, totalRevenue > 0 ~ totalRevenue),
          costGoodsSold = case_when(costGoodsSold < 0 ~ 0, costGoodsSold > 0 ~ costGoodsSold),
-         ) 
+         sales = case_when(sales < 0 ~ 0, sales > 0 ~ sales),
+         otherCosts = case_when(otherCosts < 0 ~ 0, otherCosts > 0 ~ costGoodsSold)
+         ) %>% mutate(totalCosts = costGoodsSold + otherCosts)
 
 
 ########################################################################################################################
@@ -38,34 +41,55 @@ goodsData = data  %>%  mutate(
          
          ###########################################################
          # do this the old fashioned way: winsorize, etc
-         revNormd    = (totalRevenue + 0.001)/(assetsLast + 0.001),
-         costNormd   = (costGoodsSold + 0.001)/(assetsLast + 0.001),
-         netIncNormd = (netIncome + 0.001)/(assetsLast + 0.001),
-         opIncNormd  = (opInc_afDep + 0.001)/(assetsLast + 0.001),
-  
-         lnRev  = log(totalRevenue + 0.001),
+         salesByShare    = sales/shares,
+         costByShare     = costGoodsSold/shares,
+         
+         
+         salesNormd       = (sales + 0.001)/(assetsLast + 0.001),
+         # revNormd         = (totalRevenue + 0.001)/(assetsLast + 0.001),
+         costNormd        = (costGoodsSold + 0.001)/(assetsLast + 0.001),
+         # otherCostNormd   = (otherCosts + 0.001)/(assetsLast + 0.001),
+         # totalCostNormd   = (totalCosts + 0.001)/(assetsLast + 0.001),
+         netIncNormd      = (netIncome + 0.001)/(assetsLast + 0.001),
+         opIncNormd       = (opInc_afDep + 0.001)/(assetsLast + 0.001),
+         
+         lnSales = log(sales + 0.001),
+         # lnRev  = log(totalRevenue + 0.001),
          lnCost = log(costGoodsSold + 0.001),
+         # lnOtherCost = log(otherCosts + 0.001),
+         # lnTotalCost = log(totalCosts + 0.001),
          
          lnCostNormd          = log(costNormd),
-         lnRevNormd           = log(revNormd),
+         # lnOtherCostNormd     = log(otherCostNormd),
+         # lnTotalCostNormd     = log(totalCostNormd),
+         lnSalesNormd         = log(salesNormd),
+         # lnRevNormd           = log(revNormd),
          lnStockClose         = log(priceClose + 1),
          
-         lnNetIncNormd        = case_when((netIncNormd <= 0) ~ -1,
-                                         (netIncNormd  > 0) ~ log(netIncome/assetsLast + 1)),
-         lnOpIncNormd         = case_when((opIncNormd <= 0) ~ -1,
-                                         ((opIncNormd + 0.001)/(assetsLast + 0.001) > 0) ~ log(opInc_afDep/assetsLast + 1)),
-         
+         # lnNetIncNormd        = case_when((netIncNormd <= 0) ~ -1,
+         #                                 (netIncNormd  > 0) ~ log(netIncome/assetsLast + 1)),
+         # lnOpIncNormd         = case_when((opIncNormd <= 0) ~ -1,
+         #                                 ((opIncNormd + 0.001)/(assetsLast + 0.001) > 0) ~ log(opInc_afDep/assetsLast + 1)),
+         earningsPerShare  = Winsorize(earningsPerShare, probs = c(0.01, 0.99),  na.rm = TRUE),
+         salesByShare      = Winsorize(salesByShare, probs = c(0.01, 0.99),  na.rm = TRUE),
+         costByShare       = Winsorize(costByShare, probs = c(0.01, 0.99),  na.rm = TRUE),
   
+         salesNormd        = Winsorize(salesNormd, probs = c(0.01, 0.99),  na.rm = TRUE),
+         # revNormd          = Winsorize(revNormd, probs = c(0.01, 0.99),  na.rm = TRUE),
          costNormd         = Winsorize(costNormd, probs = c(0.01, 0.99),  na.rm = TRUE),
-         revNormd          = Winsorize(revNormd, probs = c(0.01, 0.99),   na.rm = TRUE),
-         netIncNormd       = Winsorize(netIncNormd, probs = c(0.01, 0.99),na.rm = TRUE),
-         opIncNormd        = Winsorize(opIncNormd, probs = c(0.01, 0.99), na.rm = TRUE),
+         # otherCostNormd    = Winsorize(otherCostNormd, probs = c(0.01, 0.99),  na.rm = TRUE),
+         # totalCostNormd    = Winsorize(totalCostNormd, probs = c(0.01, 0.99),  na.rm = TRUE),
+         # netIncNormd       = Winsorize(netIncNormd, probs = c(0.01, 0.99),na.rm = TRUE),
+         # opIncNormd        = Winsorize(opIncNormd, probs = c(0.01, 0.99), na.rm = TRUE),
   
   
          lnCostNormd         = Winsorize(lnCostNormd, probs = c(0.01, 0.99),  na.rm = TRUE),
-         lnRevNormd          = Winsorize(lnRevNormd, probs = c(0.01, 0.99),   na.rm = TRUE),
-         lnNetIncNormd       = Winsorize(lnNetIncNormd, probs = c(0.01, 0.99),na.rm = TRUE),
-         lnOpIncNormd        = Winsorize(lnOpIncNormd, probs = c(0.01, 0.99), na.rm = TRUE),
+         # lnOtherCostNormd    = Winsorize(lnCostNormd, probs = c(0.01, 0.99),  na.rm = TRUE),
+         # lnTotalCostNormd    = Winsorize(lnCostNormd, probs = c(0.01, 0.99),  na.rm = TRUE),
+         lnSalesNormd        = Winsorize(lnSalesNormd, probs  = c(0.01, 0.99),   na.rm = TRUE),
+         # lnRevNormd          = Winsorize(lnRevNormd, probs    = c(0.01, 0.99),   na.rm = TRUE),
+         # lnNetIncNormd       = Winsorize(lnNetIncNormd, probs = c(0.01, 0.99),na.rm = TRUE),
+         # lnOpIncNormd        = Winsorize(lnOpIncNormd, probs = c(0.01, 0.99), na.rm = TRUE),
          lnStockClose        = Winsorize(lnStockClose, probs = c(0.01, 0.99), na.rm = TRUE),
         
         
@@ -78,7 +102,17 @@ goodsData = data  %>%  mutate(
          opIncNormdAf_take2 = (opInc_afDep/assetsLast) ,
          opIncNormdBef_take2 = (opInc_befDep/assetsLast) ,
          
+         salesNormd_take2       = (sales)/(assetsLast),
+         revNormd_take2         = (totalRevenue)/(assetsLast),
+         costNormd_take2        = (costGoodsSold)/(assetsLast),
+         otherCostNormd_take2   = (otherCosts)/(assetsLast),
+         totalCostNormd_take2   = (totalCosts)/(assetsLast),
+         netIncNormd_take2      = (netIncome)/(assetsLast),
+         opIncNormd_take2       = (opInc_afDep)/(assetsLast),
          
+         lnSalesNormd_take2      = log(Winsorize(salesNormd_take2 + 1, probs     = c(0.01, 0.99),  na.rm = TRUE)),
+         lnOtherCostNormd_take2  = log(Winsorize(otherCostNormd_take2 + 1, probs     = c(0.01, 0.99),  na.rm = TRUE)),
+         lnTotalCostNormd_take2  = log(Winsorize(totalCostNormd_take2 + 1, probs     = c(0.01, 0.99),  na.rm = TRUE)),
          lnCostNormd_take2       = log(Winsorize(costNormd_take2 + 1, probs     = c(0.01, 0.99),  na.rm = TRUE)),
          lnRevNormd_take2        = log(Winsorize(revNormd_take2 + 1, probs      = c(0.01, 0.99),   na.rm = TRUE)),
          lnNetIncNormd_take2     = log(Winsorize(netIncNormd_take2 + 1, probs   = c(0.025, 0.99),na.rm = TRUE)),
@@ -198,13 +232,15 @@ goodsData = data  %>%  mutate(
          wtdSupplier_excessRain     = wtd_supplier_precip_zipQuarter_95     + wtd_supplier_precip_zipQuarter_95 - 9)
 
 goodsData <- goodsData[complete.cases(goodsData$empMx_temp_zipQuarter_95) & 
-                         complete.cases(goodsData$lnOpIncNormdBef_take2) &
-                         complete.cases(goodsData$lnRevNormd_take2) &
-                         complete.cases(goodsData$lnCostNormd_take2) & 
-                         (goodsData$lnOpIncNormdBef_take2 < Inf) & 
-                         (goodsData$opIncNormdBef_take2   > -Inf) & 
-                         ((goodsData$opIncNormdBef_take2  < Inf)) & 
-                         complete.cases(goodsData$gvkey), ]
+                        complete.cases(goodsData$earningsPerShare) &
+                        complete.cases(goodsData$salesByShare) &
+                        complete.cases(goodsData$salesNormd) &
+                        complete.cases(goodsData$costGoodsSold) & 
+                        complete.cases(goodsData$costByShare) &
+                         complete.cases(goodsData$costNormd) &
+                        complete.cases(goodsData$opInc_afDep) &
+                        complete.cases(goodsData$gvkey) & 
+                        (goodsData$indGroup != ""), ]
 
 freqWeights = goodsData %>%
   count(indGroup, sizeTercile) %>%
@@ -217,7 +253,7 @@ freqWeights = goodsData %>%
 
 dim(goodsData)
 
-goodsData = goodsData %>% merge(freqWeights, how = 'left')     
+# goodsData = goodsData %>% merge(freqWeights, how = 'left')     
 
 dim(goodsData)
 
