@@ -50,24 +50,16 @@ goodsData = data  %>%  mutate(
          lnRevNormd           = log(revNormd),
          lnStockClose         = log(priceClose + 1),
          
-         lnNetIncNormd        = case_when((netIncNormd <= 0) ~ -1,
-                                         (netIncNormd  > 0) ~ log(netIncome/assetsLast + 1)),
-         lnOpIncNormd         = case_when((opIncNormd <= 0) ~ -1,
-                                         ((opIncNormd + 0.001)/(assetsLast + 0.001) > 0) ~ log(opInc_afDep/assetsLast + 1)),
+          # lnNetIncNormd        = case_when((netIncNormd <= 0) ~ -1,
+          #                                 (netIncNormd  > 0) ~ log(netIncome/assetsLast + 1)),
+          # lnOpIncNormd         = case_when((opIncNormd <= 0) ~ -1,
+          #                                 ((opIncNormd + 0.001)/(assetsLast + 0.001) > 0) ~ log(opInc_afDep/assetsLast + 1)),
          
   
          costNormd         = Winsorize(costNormd, probs = c(0.01, 0.99),  na.rm = TRUE),
          revNormd          = Winsorize(revNormd, probs = c(0.01, 0.99),   na.rm = TRUE),
          netIncNormd       = Winsorize(netIncNormd, probs = c(0.01, 0.99),na.rm = TRUE),
          opIncNormd        = Winsorize(opIncNormd, probs = c(0.01, 0.99), na.rm = TRUE),
-  
-  
-         lnCostNormd         = Winsorize(lnCostNormd, probs = c(0.01, 0.99),  na.rm = TRUE),
-         lnRevNormd          = Winsorize(lnRevNormd, probs = c(0.01, 0.99),   na.rm = TRUE),
-         lnNetIncNormd       = Winsorize(lnNetIncNormd, probs = c(0.01, 0.99),na.rm = TRUE),
-         lnOpIncNormd        = Winsorize(lnOpIncNormd, probs = c(0.01, 0.99), na.rm = TRUE),
-         lnStockClose        = Winsorize(lnStockClose, probs = c(0.01, 0.99), na.rm = TRUE),
-        
         
         
          ##############################################################
@@ -198,13 +190,24 @@ goodsData = data  %>%  mutate(
          wtdSupplier_excessRain     = wtd_supplier_precip_zipQuarter_95     + wtd_supplier_precip_zipQuarter_95 - 9)
 
 goodsData <- goodsData[complete.cases(goodsData$empMx_temp_zipQuarter_95) & 
-                         complete.cases(goodsData$lnOpIncNormdBef_take2) &
-                         complete.cases(goodsData$lnRevNormd_take2) &
-                         complete.cases(goodsData$lnCostNormd_take2) & 
-                         (goodsData$lnOpIncNormdBef_take2 < Inf) & 
-                         (goodsData$opIncNormdBef_take2   > -Inf) & 
-                         ((goodsData$opIncNormdBef_take2  < Inf)) & 
+                         
+                         complete.cases(goodsData$revNormd) &
+                         complete.cases(goodsData$costNormd) &
+                         complete.cases(goodsData$opIncNormd) & 
+                         
+                         
+                         complete.cases(goodsData$revNormd_take2) &
+                         complete.cases(goodsData$costNormd_take2) &
+                         complete.cases(goodsData$lnOpIncNormdAf_take2) &
+                         
+                         complete.cases(goodsData$lnRev) &
+                         complete.cases(goodsData$lnCost) &
+                         complete.cases(goodsData$lnStockClose) &
+                         
                          complete.cases(goodsData$gvkey), ]
+
+dim(goodsData)
+
 
 freqWeights = goodsData %>%
   count(indGroup, sizeTercile) %>%
@@ -215,14 +218,26 @@ freqWeights = goodsData %>%
        select(-n) %>% rename(freqSuppliers = freq))) %>% 
   mutate(pweights = freq/freqSuppliers) %>% select(-c(freq,freqSuppliers))
 
+# freqWeights2 = goodsData %>%
+#   count(indGroup) %>%
+#   mutate(freq = round(n / sum(n), 4)) %>% select(-n) %>% merge(
+#     (goodsData %>% filter(isSupplier == "True") %>%
+#        count(indGroup) %>%
+#        mutate(freq = round(n / sum(n), 4)) %>% 
+#        select(-n) %>% rename(freqSuppliers = freq))) %>% 
+#   mutate(pweights2 = freq/freqSuppliers) %>% select(-c(freq,freqSuppliers))
+
 dim(goodsData)
 
-goodsData = goodsData %>% merge(freqWeights, how = 'left')     
+goodsData = goodsData %>% merge(freqWeights, how = 'left') # %>% merge(freqWeights2, how = 'left')    
+
+
+
 
 dim(goodsData)
 
 
 write.csv(goodsData,"data/companyData/goodsData.csv")
 
-write.csv(goodsData[goodsData$isSupplier == 'True',],"data/companyData/supplierGoodsData.csv")
 
+write.csv(goodsData[goodsData$isSupplier == 'True',],"data/companyData/supplierGoodsData.csv")

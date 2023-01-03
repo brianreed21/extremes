@@ -1,7 +1,7 @@
 cd ../supplyChain/data/companyData/
+
+
 clear all
-
-
 set maxvar 100000
 import delimited goodsData_withIndDefs
 * import delimited goodsData

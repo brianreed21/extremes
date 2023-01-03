@@ -8,17 +8,20 @@ clear all
 set maxvar 100000
 clear all
 import delimited goodsData_withIndDefs
+destring year, replace
 
-keep if year > 2000 & year < 2020
-keep if worstsupplier_excessheat90plusem != .
+keep if year != .
+destring gvkey, replace
+describe gvkey
+
+destring qtr, replace
+
 
 encode yearqtr, generate(time)
 encode indgroup, generate(industry)
 * encode indseason, generate(indSeason)
 
-destring qtr, replace
-
-replace opincChange = opinc_befdep/(opinc_befdeplast)
+* replace opincChange = opinc_befdep/(opinc_befdeplast)
 gen opIncNormdPerc = opincnormd*100
 
 **************************************
@@ -48,7 +51,6 @@ outreg2 using reg1_indir.xls, append ctitle("op inc rain - largest") label
 quietly regress opIncNormdPerc c.wtdsupplier_excessrainemp i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile [pweight = pweights], cluster(gvkey)
 margins, dydx(wtdsupplier_excessrainemp) post
 outreg2 using reg1_indir.xls, append ctitle("op inc rain - wtd") label
-
 
 
 

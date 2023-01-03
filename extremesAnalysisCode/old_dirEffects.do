@@ -4,9 +4,12 @@ clear all
 
 set maxvar 100000
 import delimited goodsData_withIndDefs
+
+
 keep if year != .
 destring gvkey, replace
 describe gvkey
+destring qtr, replace
 * import delimited customer_goodsData
 
 
@@ -23,11 +26,11 @@ encode gsectordesc, generate(industrygics)
 log using table1.log, replace
 
 * first heat - w/o and w/ controls
-quietly regress lnopincnormdbef_take2 c.excessheat90plusemp i.industry#i.qtr i.time i.gvkey, cluster(gvkey)
+quietly regress opincnormdbef_take2 c.excessheat90plusemp i.industry#i.qtr i.time i.gvkey, cluster(gvkey)
 margins, dydx(excessheat90plusemp) post
 outreg2 using reg1.xls, append ctitle("excessheat90plus - no controls") label
 
-quietly regress lnopincnormdbef_take2 c.excessheat90plusemp i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
+quietly regress opincnormdbef_take2 c.excessheat90plusemp i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
 margins, dydx(excessheat90plusemp) post
 outreg2 using reg1.xls, append ctitle("excessheat90plus - controls") label
 

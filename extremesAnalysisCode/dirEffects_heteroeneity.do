@@ -19,9 +19,8 @@ encode indgroup, generate(industry)
 encode indseason, generate(indSeason)
 encode gsectordesc, generate(industrygics)
 
-
+encode sic2desc, generate(industrysics2)
 gen opIncNormdPerc = opincnormd*100
-
 
 
 *************
@@ -32,69 +31,62 @@ log using table1.log, replace
 * first heat - w/o and w/ controls
 quietly regress opIncNormdPerc c.excessheat90plusemp i.industry#i.qtr i.time i.gvkey, cluster(gvkey)
 margins, dydx(excessheat90plusemp) post
-outreg2 using reg1.xls, append ctitle("excessheat90plus - no controls") label
+outreg2 using reg1_0102.xls, append ctitle("excessheat90plus - no controls") label
 
 quietly regress opIncNormdPerc c.excessheat90plusemp i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
 margins, dydx(excessheat90plusemp) post
-outreg2 using reg1.xls, append ctitle("excessheat90plus - controls") label
+outreg2 using reg1_0102.xls, append ctitle("excessheat90plus - controls") label
 
 
 * next rain - w/o and w/ controls
-quietly regress opIncNormdPerc c.excessrainemp i.industry#i.qtr i.time i.gvkey, cluster(gvkey)
+quietly regress opIncNormdPerc c.excessrainemp i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
 margins, dydx(excessrainemp) post
-outreg2 using reg1.xls, append ctitle("excessrain - no controls") label
+outreg2 using reg1_0102.xls, append ctitle("excessrain - no controls") label
 
 quietly regress opIncNormdPerc c.excessrainemp i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
 margins, dydx(excessrainemp) post
-outreg2 using reg1.xls, append ctitle("excessrain - controls") label
+outreg2 using reg1_0102.xls, append ctitle("excessrain - controls") label
 
 
 *************
 * reg 1a - effects by rev, cost
-quietly regress lnnetincnormd_take2 c.excessheat90plusemp i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
-margins, dydx(excessheat90plusemp) post
-outreg2 using reg1.xls, append ctitle("excessheat90plus - no controls") label
+foreach outcome of varlist netincnormd revnormd costnormd lnstockclose   {
 
+	quietly regress `outcome' c.excessheat90plusemp i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
+	margins, dydx(excessheat90plusemp) post
+	outreg2 using reg1_0102.xls, append ctitle("`outcome' - controls") label
 
-quietly regress lnnetincnormd_take2 c.excessheat90plusemp i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
-margins, dydx(excessheat90plusemp) post
-outreg2 using reg1.xls, append ctitle("excessheat90plus - no controls") label
+	quietly regress `outcome' c.excessrainemp i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
+	margins, dydx(excessrainemp) post
+	outreg2 using reg1_0102.xls, append ctitle("`outcome', excessrain - controls") label
 
-quietly regress lnnetincnormd_take2 c.excessrainemp i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
-margins, dydx(excessrainemp) post
-outreg2 using reg1.xls, append ctitle("net, excessrain - no controls") label
-
-quietly regress lnnetincnormd_take2 c.excessrainemp i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
-margins, dydx(excessrainemp) post
-outreg2 using reg1.xls, append ctitle("net, excessrain - no controls") label
-
-
+}
 
 
 *************
 * reg 2 - by background climate
-quietly regress lnopincnormdbef_take2 c.excessheat90plusemp##i.temptercilewtd i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
+quietly regress opIncNormdPerc c.excessheat90plusemp##i.temptercilewtd i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
 margins, dydx(excessheat90plusemp) over(temptercilewtd) post
-outreg2 using reg2.xls, append ctitle("excessheat90plus - controls") label
+outreg2 using reg2_0102.xls, append ctitle("excessheat90plus - controls") label
 
 
 * next rain
-quietly regress lnopincnormdbef_take2 c.excessrainemp##i.preciptercilewtd i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
+quietly regress opIncNormdPerc c.excessrainemp##i.preciptercilewtd i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
 margins, dydx(excessrainemp) over(preciptercilewtd) post
-outreg2 using reg2.xls, append ctitle("excessrain - controls") label
+outreg2 using reg2_0102.xls, append ctitle("excessrain - controls") label
 
 
 *************
 * reg 3 - by qtr
-quietly regress lnopincnormdbef_take2 c.excessheat90plusemp##i.qtr i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
+quietly regress opIncNormdPerc c.excessheat90plusemp##i.qtr i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
 margins, dydx(excessheat90plusemp) over(qtr) post
-outreg2 using reg3.xls, append ctitle("excessheat90plus hq - controls") label
+outreg2 using reg3_0102.xls, append ctitle("excessheat90plus hq - controls") label
 
 
 * next rain
-quietly regress lnopincnormdbef_take2 c.excessrainemp##i.qtr i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
+quietly regress opIncNormdPerc c.excessrainemp##i.qtr i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
 margins, dydx(excessrainemp) over(qtr) post
-outreg2 using reg3.xls, append ctitle("excessrain hq - controls") label
+outreg2 using reg3_0102.xls, append ctitle("excessrain hq - controls") label
 
 
 
@@ -109,15 +101,15 @@ margins, dydx(excessheatemp) over(temptercile_byqtr qtr) post
 outreg2 using reg3.xls, append ctitle("relative heat - qtr tercile") label*/
 
 
-quietly regress lnopincnormdbef_take2 c.excessheat90plusemp##i.qtr##i.temptercilewtd i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
-outreg2 using reg4.xls, append ctitle("absolute heat hq - qtr tercile") label
+quietly regress opIncNormdPerc c.excessheat90plusemp##i.qtr##i.temptercilewtd i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
+outreg2 using reg4_0102.xls, append ctitle("absolute heat hq - qtr tercile") label
 
 
 **
 * next rain - relative v absolute
-quietly regress lnopincnormdbef_take2 c.excessrainemp##i.qtr##i.preciptercilewtd i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
+quietly regress opIncNormdPerc c.excessrainemp##i.qtr##i.preciptercilewtd i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
 margins, dydx(excessrainemp) over(preciptercilewtd qtr) post
-outreg2 using reg4.xls, append ctitle("relative rain hq - qtr tercile") label
+outreg2 using reg4_0102.xls, append ctitle("relative rain hq - qtr tercile") label
 
 
 
@@ -138,22 +130,22 @@ outreg2 using reg3.xls, append ctitle("excessrainemp") label*/
 
 
 * encode gsectordesc, generate(industrygics)
-quietly regress lnopincnormdbef_take2 c.excessheat90plusemp##i.industrygics i.industrygics#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
+quietly regress opIncNormdPerc c.excessheat90plusemp##i.industrygics i.industrygics#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
 margins, dydx(excessheat90plusemp) over(industrygics) post
-outreg2 using reg5.xls, append ctitle("excessheat90plus hq gics") label
+outreg2 using reg5_0102.xls, append ctitle("excessheat90plus hq gics") label
 
-quietly regress lnopincnormdbef_take2 c.excessrainemp##i.industrygics i.industrygics#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
+quietly regress opIncNormdPerc c.excessrainemp##i.industrygics i.industrygics#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
 margins, dydx(excessrainemp) over(industrygics) post
-outreg2 using reg5.xls, append ctitle("excessrain hq gics") label
+outreg2 using reg5_0102.xls, append ctitle("excessrain hq gics") label
 
 
-quietly regress lnopincnormdbef_take2 c.excessheat90plusemp##i.industry i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
+quietly regress opIncNormdPerc c.excessheat90plusemp##i.industry i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
 margins, dydx(excessheat90plusemp) over(industry) post
-outreg2 using reg5.xls, append ctitle("excessheat90 hq sic2") label
+outreg2 using reg5_0102.xls, append ctitle("excessheat90 hq sic2") label
 
-quietly regress lnopincnormdbef_take2 c.excessrainemp##i.industry i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
-margins, dydx(excessrainemp) over(industry) post
-outreg2 using reg5.xls, append ctitle("excessrain hq sic2") label
+quietly regress opIncNormdPerc c.excessrainemp##i.industrysics2 i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
+margins, dydx(excessrainemp) over(industrysics2) post
+outreg2 using reg5_0102.xls, append ctitle("excessrain hq sic2") label
 
 
 
