@@ -15,7 +15,7 @@ encode indgroup, generate(industry)
 * do the hqs
 
 * first heat - w/o and w/ controls
-quietly regress lnopincnormd c.worstsupplier_excessheat90plusem i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
+quietly regress lnopincnormd c.worstsupplier_excessheat90plusem c.excessrainemp i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
 margins, dydx(worstsupplier_excessheat90plusem) post
 
 quietly regress lnopincnormd c.largestsupplier_excessheat90plus i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
