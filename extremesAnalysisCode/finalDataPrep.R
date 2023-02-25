@@ -46,6 +46,8 @@ data = data[complete.cases(data$assetsLast) & complete.cases(data$profitTercile)
          ) 
 
 table(data$sic2Desc)
+
+
 ########################################################################################################################
 # run this to get data across all firms
 goodsData = data  %>%  mutate(
@@ -106,20 +108,26 @@ goodsData = data  %>%  mutate(
     mutate(extremeHeatQuarterly  = temp_zipQuarter95   + lag1_temp_zipQuarter95,
       extremePrecipQuarterly     = precip_zipQuarter95      + lag1_precip_zipQuarter95,
       
-      extremeHeatQuarterly_max   = empMx_temp_zipQuarter_95   + empMx_lag1_temp_zipQuarter_95,
-      extremePrecipQuarterly_max = empMx_precip_zipQuarter_95 + empMx_lag1_precip_zipQuarter_95,
+      extremeHeatQuarterly_max   = empMx_temp_zipQuarter95   + empMx_lag1_temp_zipQuarter95,
+      extremePrecipQuarterly_max = empMx_precip_zipQuarter95 + empMx_lag1_precip_zipQuarter95,
       
-      extremeHeatQuarterly_wtd   = empWt_temp_zipQuarter_95   + empWt_lag1_temp_zipQuarter_95,
-      extremePrecipQuarterly_wtd = empWt_precip_zipQuarter_95      + empWt_lag1_precip_zipQuarter_95,
+      extremeHeatQuarterly_wtd   = empWt_temp_zipQuarter95   + empWt_lag1_temp_zipQuarter95,
+      extremePrecipQuarterly_wtd = empWt_precip_zipQuarter95      + empWt_lag1_precip_zipQuarter95,
       
       heatAnomalyQuarterly   = temp_zipQuarter50     + lag1_temp_zipQuarter50,
       precipAnomalyQuarterly = precip_zipQuarter50   + lag1_precip_zipQuarter50,
+      
+      heatAnomalyQuarterly_wtd   = empWt_temp_zipQuarter50     + empWt_lag1_temp_zipQuarter50,
+      precipAnomalyQuarterly_wtd = empWt_precip_zipQuarter50   + empWt_lag1_precip_zipQuarter50,
       
       extremeHeatDaily   = temp_zipQuarter_95   + lag1_temp_zipQuarter_95,
       extremePrecipDaily = precip_zipQuarter_95 + lag1_precip_zipQuarter_95,
       
       heatAnomalyDaily   = temp_zipQuarter_50     + lag1_temp_zipQuarter_50,
       precipAnomalyDaily = precip_zipQuarter_50   + lag1_precip_zipQuarter_50,
+      
+      heatAnomalyDaily_wtd   = empWt_temp_zipQuarter_50     + empWt_lag1_temp_zipQuarter_50,
+      precipAnomalyDaily_wtd = empWt_precip_zipQuarter_50   + empWt_lag1_precip_zipQuarter_50,
       
       heatDays90Plus    = days90Plus + lag1_days90Plus,
       streak90Plus  = streak90Plus   + lag1_streak90Plus,
@@ -132,10 +140,19 @@ goodsData = data  %>%  mutate(
       precip95National_max = empMx_precip_annual_95 + empMx_lag1_precip_annual_95,
 
       precip99National = precip_annual_99 + lag1_precip_annual_99,
-      heat99National   = temp_annual_99   + lag1_temp_annual_99,
+      precip99National_wtd = empWt_precip_annual_99 + empWt_lag1_precip_annual_99,
       
-      extremeHeatDays_wtd =  empWt_temp_zipQuarter_95    + empWt_lag1_temp_zipQuarter_95,
-      extremePrecipDays_wtd = empWt_precip_zipQuarter_95 + empWt_lag1_precip_zipQuarter_95,
+      heat95National       = temp_annual_95   + lag1_temp_annual_95,
+      heat95National_wtd   = empWt_temp_annual_95   + empWt_lag1_temp_annual_95,
+      
+      heat99National       = temp_annual_99   + lag1_temp_annual_99,
+      heat99National_wtd   = empWt_temp_annual_99   + empWt_lag1_temp_annual_99,
+      
+      extremeHeatDays_wtd   =  empWt_temp_zipQuarter_95    + empWt_lag1_temp_zipQuarter_95,
+      extremeHeatDays_wtd99 =  empWt_temp_zipQuarter_99    + empWt_lag1_temp_zipQuarter_99,
+      
+      extremePrecipDays_wtd   = empWt_precip_zipQuarter_95 + empWt_lag1_precip_zipQuarter_95,
+      extremePrecipDays_wtd99 = empWt_precip_zipQuarter_99 + empWt_lag1_precip_zipQuarter_99,
       
       extremeHeatDays_max =  empMx_temp_zipQuarter_95    + empMx_lag1_temp_zipQuarter_95,
       extremePrecipDays_max = empMx_precip_zipQuarter_95 + empMx_lag1_precip_zipQuarter_95,
@@ -272,8 +289,9 @@ goodsData = goodsData %>% merge(freqWeights, how = 'left') %>% select(-contains(
                                                                       -contains('empWt_'),
                                                                       -contains('empMx_'),
                                                                       # -contains('50'),
-                                                                      -contains('95'),
-                                                                      -contains('99'),
+                                                                      -contains('_95'),
+                                                                      -contains('95_'),
+                                                                      # -contains('99'),
                                                                       -contains('_supplier_'), 
                                                                       -contains('_supplier500k_')) %>% filter(!(gsectorDesc %in% c('Communication Services',
                                                                                                                               'Real Estate')))
@@ -281,8 +299,9 @@ goodsData = goodsData %>% merge(freqWeights, how = 'left') %>% select(-contains(
 
 dim(goodsData)
 
+write.csv(goodsData,"data/companyData/goodsData_0208.csv")
 
-write.csv(goodsData,"data/companyData/goodsData_0104.csv")
+
 
 nonServices = goodsData %>% filter(!(ggroupDesc %in% c('Health Care Equipment & Services', 'Commercial  & Professional Services',
                                                        'Consumer Services','Telecommunication Services','Software & Services')))
