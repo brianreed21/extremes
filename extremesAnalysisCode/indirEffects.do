@@ -7,7 +7,7 @@ clear all
 **************************************
 set maxvar 100000
 clear all
-import delimited goodsData_0104
+import delimited goodsData_0208
 destring year, replace
 
 keep if year != .

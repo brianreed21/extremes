@@ -32,21 +32,84 @@ gen opIncNormdPerc = opincnormd*100
 * first heat - w/o and w/ controls
 quietly regress opIncNormdPerc c.excessheat90plusemp i.industry#i.qtr i.time i.gvkey, cluster(gvkey)
 margins, dydx(excessheat90plusemp) post
-* outreg2 using reg1_0102.xls, append ctitle("excessheat90plus - no controls") label
+outreg2 using reg1_0320.xls, append ctitle("excessheat90plus - no controls") label
 
 quietly regress opIncNormdPerc c.excessheat90plusemp i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
 margins, dydx(excessheat90plusemp) post
-* outreg2 using reg1_0102.xls, append ctitle("excessheat90plus - controls") label
+outreg2 using reg1_0320.xls, append ctitle("excessheat90plus - controls") label
 
 
 * next rain - w/o and w/ controls
 quietly regress opIncNormdPerc c.excessrainemp i.industry#i.qtr i.time i.gvkey, cluster(gvkey)
 margins, dydx(excessrainemp) post
-* outreg2 using reg1_0102.xls, append ctitle("excessrain - no controls") label 
+outreg2 using reg1_0320.xls, append ctitle("excessrain - no controls") label 
 
 quietly regress opIncNormdPerc c.excessrainemp i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
 margins, dydx(excessrainemp) post
+outreg2 using reg1_0320.xls, append ctitle("excessrain - controls") label
+
+
+
+
+ - robustness
+
+log using secondChapter_robustness.log, replace
+
+
+**********************************
+* logs - different normalization
+* heat: 
+* rainfall: 
+* first heat - w/o and w/ controls
+quietly regress lnopincnormdaf_take2 c.excessheat90plusemp i.industry#i.qtr i.time i.gvkey, cluster(gvkey)
+margins, dydx(excessheat90plusemp) post
+* outreg2 using reg1_0102.xls, append ctitle("excessheat90plus - no controls") label
+
+quietly regress lnopincnormdaf_take2 c.excessheat90plusemp i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
+margins, dydx(excessheat90plusemp) post
+* outreg2 using reg1_0102.xls, append ctitle("excessheat90plus - controls") label
+
+
+* next rain - w/o and w/ controls
+quietly regress lnopincnormdaf_take2 c.excessrainemp i.industry#i.qtr i.time i.gvkey, cluster(gvkey)
+margins, dydx(excessrainemp) post
+* outreg2 using reg1_0102.xls, append ctitle("excessrain - no controls") label 
+
+quietly regress lnopincnormdaf_take2 c.excessrainemp i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
+margins, dydx(excessrainemp) post
 * outreg2 using reg1_0102.xls, append ctitle("excessrain - controls") label
+
+
+
+
+
+**********************************
+* hqs vs footprints
+* heat: 
+* rainfall: 
+* first heat - w/o and w/ controls
+quietly regress opIncNormdPerc c.excessheat90plus i.industry#i.qtr i.time i.gvkey, cluster(gvkey)
+margins, dydx(excessheat90plus) post
+* outreg2 using reg1_0102.xls, append ctitle("excessheat90plus - no controls") label
+
+quietly regress opIncNormdPerc c.excessheat90plus i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
+margins, dydx(excessheat90plus) post
+* outreg2 using reg1_0102.xls, append ctitle("excessheat90plus - controls") label
+
+
+* next rain - w/o and w/ controls
+quietly regress opIncNormdPerc c.excessrain i.industry#i.qtr i.time i.gvkey, cluster(gvkey)
+margins, dydx(excessrain) post
+* outreg2 using reg1_0102.xls, append ctitle("excessrain - no controls") label 
+
+quietly regress opIncNormdPerc c.excessrain i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
+margins, dydx(excessrain) post
+* outreg2 using reg1_0102.xls, append ctitle("excessrain - controls") label
+
+
+
+
+
 
 
 
@@ -160,61 +223,7 @@ log close
 
 
 ********************************************************************************
-* ch 2 - robustness
-
-log using secondChapter_robustness.log, replace
-
-
-**********************************
-* logs - different normalization
-* heat: 
-* rainfall: 
-* first heat - w/o and w/ controls
-quietly regress lnopincnormdaf_take2 c.excessheat90plusemp i.industry#i.qtr i.time i.gvkey, cluster(gvkey)
-margins, dydx(excessheat90plusemp) post
-* outreg2 using reg1_0102.xls, append ctitle("excessheat90plus - no controls") label
-
-quietly regress lnopincnormdaf_take2 c.excessheat90plusemp i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
-margins, dydx(excessheat90plusemp) post
-* outreg2 using reg1_0102.xls, append ctitle("excessheat90plus - controls") label
-
-
-* next rain - w/o and w/ controls
-quietly regress lnopincnormdaf_take2 c.excessrainemp i.industry#i.qtr i.time i.gvkey, cluster(gvkey)
-margins, dydx(excessrainemp) post
-* outreg2 using reg1_0102.xls, append ctitle("excessrain - no controls") label 
-
-quietly regress lnopincnormdaf_take2 c.excessrainemp i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
-margins, dydx(excessrainemp) post
-* outreg2 using reg1_0102.xls, append ctitle("excessrain - controls") label
-
-
-
-
-
-**********************************
-* hqs vs footprints
-* heat: 
-* rainfall: 
-* first heat - w/o and w/ controls
-quietly regress opIncNormdPerc c.excessheat90plus i.industry#i.qtr i.time i.gvkey, cluster(gvkey)
-margins, dydx(excessheat90plus) post
-* outreg2 using reg1_0102.xls, append ctitle("excessheat90plus - no controls") label
-
-quietly regress opIncNormdPerc c.excessheat90plus i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
-margins, dydx(excessheat90plus) post
-* outreg2 using reg1_0102.xls, append ctitle("excessheat90plus - controls") label
-
-
-* next rain - w/o and w/ controls
-quietly regress opIncNormdPerc c.excessrain i.industry#i.qtr i.time i.gvkey, cluster(gvkey)
-margins, dydx(excessrain) post
-* outreg2 using reg1_0102.xls, append ctitle("excessrain - no controls") label 
-
-quietly regress opIncNormdPerc c.excessrain i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
-margins, dydx(excessrain) post
-* outreg2 using reg1_0102.xls, append ctitle("excessrain - controls") label
-
+* ch 1
 
 
 
