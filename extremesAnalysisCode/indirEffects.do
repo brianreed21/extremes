@@ -7,7 +7,9 @@ clear all
 **************************************
 set maxvar 100000
 clear all
-import delimited goodsData_0208
+import delimited goodsData_0320
+* _nonservices.csv
+* goodsData_0208
 destring year, replace
 
 keep if year != .
@@ -25,6 +27,13 @@ encode indgroup, generate(industry)
 gen opIncNormdPerc = opincnormd*100
 
 **************************************
+replace excessheat90plusemp = . if excessheat90plusemp == -500
+foreach v in worstsupplier_excessheat90plusem largestsupplier_excessheat90plus wtdsupplier_excessheat90plusemp worstsupplier_excessrainemp largestsupplier_excessrainemp wtdsupplier_excessrainemp worstsupplier500k_excessheat90pl largestsupplier500k_excessheat90 wtdsupplier500k_excessheat90plus worstsupplier500k_excessrainemp largestsupplier500k_excessrainem wtdsupplier500k_excessrainemp {
+	replace `v' = . if `v' == -500
+}
+
+
+
 * do a bunch of tests here
 quietly regress opIncNormdPerc c.worstsupplier_excessheat90plusem i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile [pweight = pweights], cluster(gvkey)
 margins, dydx(worstsupplier_excessheat90plus) post

@@ -3,7 +3,8 @@ clear all
 
 
 set maxvar 100000
-import delimited goodsData_0208
+import delimited goodsData_0320_nonservices.csv
+* goodsData_0208
 keep if year != .
 destring gvkey, replace
 describe gvkey
@@ -28,11 +29,16 @@ gen opIncNormdPerc = opincnormd*100
 * ch 1 - main results 
 * do the hqs
 * 
+replace excessheat90plusemp = . if excessheat90plusemp == -500
+foreach v in excessheat90plusemp excessrainemp {
+	replace `v' = . if `v' == -500
+}
+
 
 * first heat - w/o and w/ controls
 quietly regress opIncNormdPerc c.excessheat90plusemp i.industry#i.qtr i.time i.gvkey, cluster(gvkey)
 margins, dydx(excessheat90plusemp) post
-outreg2 using reg1_0320.xls, append ctitle("excessheat90plus - no controls") label
+outreg2 using reg1_0320.xls, replace ctitle("excessheat90plus - no controls") label
 
 quietly regress opIncNormdPerc c.excessheat90plusemp i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
 margins, dydx(excessheat90plusemp) post

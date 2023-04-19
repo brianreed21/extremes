@@ -1,5 +1,6 @@
-library(reshape);library(gridExtra);library(stargazer);library(ggplot2);library(gdata);library(polyclip);library(maptools);library(plyr);library(ggmap);library(sp);library(raster);library(rgdal);library(maps);library(rworldmap);library(scales);library(ggplot2);library(ggrepel);library(xtable);library(plm);library(lmtest)
-library(lfe);library(R.utils);library(dplyr);library(caTools);library(tidyr);library(DescTools)
+library(reshape);library(gridExtra);library(stargazer);library(ggplot2);library(gdata);library(polyclip);library(maptools);library(plyr);library(ggmap);
+library(sp);library(raster);library(rgdal);library(maps);library(rworldmap);library(scales);library(ggplot2);library(ggrepel);library(xtable);library(plm);
+library(lmtest);library(lfe);library(R.utils);library(dplyr);library(caTools);library(tidyr);library(DescTools)
 library(plm); library(sandwich); library(lmtest); library(fastDummies)
 
 
@@ -14,7 +15,7 @@ allSuppliers     <- read.csv("data/companyData/allIndirectWeather.csv")  %>% sel
 
 # dirIndir         <- read.csv("data/companyData/allDirIndir.csv") %>% select(-X)
 dirIndir         <- read.csv("data/companyData/allDirIndir_with500k.csv") %>% select(-X)
-estabAvgs         = read.csv("data/companyData/estabWtdWeather.csv") %>% select(-X)
+estabAvgs         = read.csv("data/companyData/estabWtdWeather_0320.csv") %>% select(-X)
 dirIndir <- merge(estabAvgs,dirIndir)
 
 
@@ -102,10 +103,10 @@ goodsData = data  %>%  mutate(
          sizeQtr  = paste0(sizeTercile,"_",yearQtr), 
          profitQtr  = paste0(profitTercile,"_",yearQtr), 
          indQtr  = paste0(indGroup,yearQtr)
-         ) %>%
+         )
   
-  # for direct effects
-    mutate(extremeHeatQuarterly  = temp_zipQuarter95   + lag1_temp_zipQuarter95,
+# for direct effects
+goodsData =  goodsData %>% mutate(extremeHeatQuarterly  = temp_zipQuarter95   + lag1_temp_zipQuarter95,
       extremePrecipQuarterly     = precip_zipQuarter95      + lag1_precip_zipQuarter95,
       
       extremeHeatQuarterly_max   = empMx_temp_zipQuarter95   + empMx_lag1_temp_zipQuarter95,
@@ -157,6 +158,8 @@ goodsData = data  %>%  mutate(
       extremeHeatDays_max =  empMx_temp_zipQuarter_95    + empMx_lag1_temp_zipQuarter_95,
       extremePrecipDays_max = empMx_precip_zipQuarter_95 + empMx_lag1_precip_zipQuarter_95,
       
+      precipAnomaly_natl_wtd = empWt_precip_annual_50   + empWt_lag1_precip_annual_50,
+      
       tempTercile   = ntile(quarterly_avg_temp,3), 
       precipTercile = ntile(quarterly_avg_precip,3),
       
@@ -191,10 +194,10 @@ goodsData = data  %>%  mutate(
       excessRainNationalEmp = precip95National_wtd - 9,
       
       
-      indSeason = paste0(indGroup,qtr)) %>%
+      indSeason = paste0(indGroup,qtr)) #  %>%
 
   
-  group_by(qtr) %>%
+goodsData =  goodsData %>% group_by(qtr) %>%
   
   mutate(tempTercile_byQtr   = ntile(quarterly_avg_temp,3), 
          precipTercile_byQtr = ntile(quarterly_avg_precip,3),
@@ -203,11 +206,11 @@ goodsData = data  %>%  mutate(
          precipQuintile_byQtr = ntile(quarterly_avg_precip,5),
          
          tempDecile_byQtr   = ntile(quarterly_avg_temp,10), 
-         precipDecile_byQtr = ntile(quarterly_avg_precip,10)) %>%
+         precipDecile_byQtr = ntile(quarterly_avg_precip,10)) #  %>%
   
   
-  # next for indirect effects
-  mutate(worstSupplier_excessHeat90PlusEmp   = worst_supplier_empWt_days90Plus   + worst_supplier_empWt_lag1_days90Plus - 9,
+# next for indirect effects
+goodsData =  goodsData %>%  mutate(worstSupplier_excessHeat90PlusEmp   = worst_supplier_empWt_days90Plus   + worst_supplier_empWt_lag1_days90Plus - 9,
          largestSupplier_excessHeat90PlusEmp = largest_supplier_empWt_days90Plus + largest_supplier_empWt_lag1_days90Plus - 9,
          wtdSupplier_excessHeat90PlusEmp     = wtd_supplier_empWt_days90Plus     + wtd_supplier_empWt_lag1_days90Plus - 9,
          
@@ -221,9 +224,9 @@ goodsData = data  %>%  mutate(
          
          worstSupplier_excessRain   = worst_supplier_precip_zipQuarter_95   + worst_supplier_precip_zipQuarter_95 - 9,
          largestSupplier_excessRain = largest_supplier_precip_zipQuarter_95 + largest_supplier_precip_zipQuarter_95 - 9,
-         wtdSupplier_excessRain     = wtd_supplier_precip_zipQuarter_95     + wtd_supplier_precip_zipQuarter_95 - 9) %>%
+         wtdSupplier_excessRain     = wtd_supplier_precip_zipQuarter_95     + wtd_supplier_precip_zipQuarter_95 - 9) #  %>%
   
-  mutate(worstSupplier500k_excessHeat90PlusEmp   = worst_supplier500k_empWt_days90Plus   + worst_supplier500k_empWt_lag1_days90Plus - 9,
+goodsData =  goodsData %>%   mutate(worstSupplier500k_excessHeat90PlusEmp   = worst_supplier500k_empWt_days90Plus   + worst_supplier500k_empWt_lag1_days90Plus - 9,
          largestSupplier500k_excessHeat90PlusEmp = largest_supplier500k_empWt_days90Plus + largest_supplier500k_empWt_lag1_days90Plus - 9,
          wtdSupplier500k_excessHeat90PlusEmp     = wtd_supplier500k_empWt_days90Plus     + wtd_supplier500k_empWt_lag1_days90Plus - 9,
          
@@ -237,12 +240,13 @@ goodsData = data  %>%  mutate(
          
          worstSupplier500k_excessRain   = worst_supplier500k_precip_zipQuarter_95   + worst_supplier500k_precip_zipQuarter_95 - 9,
          largestSupplier500k_excessRain = largest_supplier500k_precip_zipQuarter_95 + largest_supplier500k_precip_zipQuarter_95 - 9,
-         wtdSupplier500k_excessRain     = wtd_supplier500k_precip_zipQuarter_95     + wtd_supplier500k_precip_zipQuarter_95 - 9) %>%
+         wtdSupplier500k_excessRain     = wtd_supplier500k_precip_zipQuarter_95     + wtd_supplier500k_precip_zipQuarter_95 - 9) # %>%
   
-  mutate_at(c('worstSupplier_excessHeat90PlusEmp', 'largestSupplier_excessHeat90PlusEmp', 'wtdSupplier_excessHeat90PlusEmp',
-              'worstSupplier_excessRainEmp', 'largestSupplier_excessRainEmp', 'wtdSupplier_excessRainEmp',
-              'worstSupplier500k_excessHeat90PlusEmp', 'largestSupplier500k_excessHeat90PlusEmp', 'wtdSupplier500k_excessHeat90PlusEmp',
-              'worstSupplier500k_excessRainEmp', 'largestSupplier500k_excessRainEmp', 'wtdSupplier500k_excessRainEmp'), ~replace_na(.,"."))
+goodsData =  goodsData %>%   mutate_at(c('worstSupplier_excessHeat90PlusEmp', 'largestSupplier_excessHeat90PlusEmp', 'wtdSupplier_excessHeat90PlusEmp',
+               'worstSupplier_excessRainEmp', 'largestSupplier_excessRainEmp', 'wtdSupplier_excessRainEmp',
+               'worstSupplier500k_excessHeat90PlusEmp', 'largestSupplier500k_excessHeat90PlusEmp', 'wtdSupplier500k_excessHeat90PlusEmp',
+               'worstSupplier500k_excessRainEmp', 'largestSupplier500k_excessRainEmp', 'wtdSupplier500k_excessRainEmp',
+               'worstSupplier_excessRain','worstSupplier_excessHeat90Plus'), ~replace_na(.,-500))
 
 goodsData <- goodsData[complete.cases(goodsData$empMx_temp_zipQuarter_95) & 
                          
@@ -282,6 +286,14 @@ freqWeights = goodsData %>%
 #        select(-n) %>% rename(freqSuppliers = freq))) %>% 
 #   mutate(pweights2 = freq/freqSuppliers) %>% select(-c(freq,freqSuppliers))
 
+goodsData = goodsData %>% merge(freqWeights, how = 'left') %>% select(-contains('_supplier_'), 
+                                                                      -contains('_supplier500k_')) %>% filter(!(gsectorDesc %in% c('Communication Services',
+                                                                                                                                   'Real Estate')))
+
+
+
+write.csv(goodsData,"data/companyData/goodsData_withLags_large.csv")
+
 dim(goodsData)
 
 
@@ -299,26 +311,28 @@ goodsData = goodsData %>% merge(freqWeights, how = 'left') %>% select(-contains(
 
 dim(goodsData)
 
-write.csv(goodsData,"data/companyData/goodsData_0208.csv")
+write.csv(goodsData,"data/companyData/goodsData_0328.csv")
 
 
 
-nonServices = goodsData %>% filter(!(ggroupDesc %in% c('Health Care Equipment & Services', 'Commercial  & Professional Services',
-                                                       'Consumer Services','Telecommunication Services','Software & Services')))
-write.csv(nonServices,"data/companyData/goodsData_0103_nonservices.csv")
+nonServices = goodsData %>% filter(!(ggroupDesc %in% c('Commercial  & Professional Services',
+                                                       "Diversified Financials", "Banks", "Insurance")))
+write.csv(nonServices,"data/companyData/goodsData_0320_nonservices.csv")
 
 write.csv(goodsData[goodsData$isSupplier == 'True',],"data/companyData/supplierGoodsData.csv")
 
 
 #################
 subset = goodsData %>%
-  select(opIncNormd, opInc_afDep, earliestYear, assetsLast, quarterly_avg_temp, quarterly_avg_precip)
+  select(opIncNormd, opInc_afDep, earliestYear, assetsLast, quarterly_avg_temp, quarterly_avg_precip) %>% mutate(opIncNormd = opIncNormd*100)
 names(subset) <- gsub(x = names(subset), pattern = "_", replacement = ".")  
-
+subset = subset %>% mutate(quarterly.avg.temp = quarterly.avg.temp*9/5 + 32) 
 df.sum <- subset %>%  summarise_each(funs(Min. = min, 
+                      Q05 = quantile(., 0.05),
                       Q33 = quantile(., 0.33), 
                       Median = median, 
-                      Q66 = quantile(., 0.66), 
+                      Q66 = quantile(., 0.66),
+                      Q95 = quantile(., 0.95),
                       Max. = max,
                       Mean = mean, 
                       'Std Dev.' = sd))
@@ -327,18 +341,20 @@ df.sum <- subset %>%  summarise_each(funs(Min. = min,
 dim(df.sum)
 
 # reshape it using tidyr functions
-rowOrder = c('quarterly.avg.precip','quarterly.avg.temp',"opIncNormd", 'opInc.afDep', "assetsLast", "earliestYear")
+rowOrder = c('opInc.afDep', "assetsLast","opIncNormd",  "earliestYear",'quarterly.avg.precip','quarterly.avg.temp')
 
 df.stats.tidy <- df.sum %>% gather(stat, val) %>%
   separate(stat, into = c("var", "stat"), sep = "_") %>%
-  spread(stat, val) %>% format(digits=1,scientific = FALSE) %>% # select(var, min, q33, median, q66, max, mean, sd) %>%
-  slice(match(rowOrder,var)) %>% mutate(var = c('Quarterly Avg. Rainfall (mm)', 'Quarterly Avg. Temperature (C)',
-                                                'Operating Income over Assets', 'Operating Income (mn. $)', 'Assets (mn. $)', 'First Year Public')) %>% 
-  rename(' ' = var) %>% select(" ", "Min.", "Q33", "Median", "Q66", "Max.", 'Mean',"Std Dev.")
+  spread(stat, val) %>% format(digits=2,scientific = FALSE) %>% # select(var, min, q33, median, q66, max, mean, sd) %>%
+  slice(match(rowOrder,var)) %>% mutate(var = c('Operating Income (mn. $)', 'Assets (mn. $)','Operating Income over Assets', 'First Year Public',
+                                                'Quarterly Avg. Rainfall (mm)', 'Quarterly Avg. Temperature (C)')) %>% 
+  rename(' ' = var) %>% select(" ", 'Q05', "Q33", "Median", "Q66",'Q95', 'Mean',"Std Dev.")
+write.csv(df.stats.tidy,"data/companyData/summaryStats.csv")
 
 
 indCounts = goodsData %>% count(gsectorDesc) %>% mutate(n = n/dim(goodsData)[1]*100) %>% format(digits=2,scientific = FALSE) %>% t()
 rownames(indCounts) = c('Industry','% Companies')
 indCounts[1,] <- c('Cons. Discret.', 'Cons. Staples', 'Energy', 'HealthCare', 'Industrials', 'I.T.','Materials','Utilities')
 indCounts <- noquote(indCounts)
+write.csv(indCounts,"data/companyData/indCounts.csv")
 
