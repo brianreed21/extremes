@@ -73,13 +73,45 @@ margins, dydx(excessrainemp) post
 * margins, dydx(excessrainemp ) post
 * outreg2 using regDir.csv, append ctitle("excessrain - controls") label
 
-esttab m1_dir m2_dir m3_dir m4_dir using "dirEffects.tex", star(* 0.10 ** 0.05 *** 0.01) ///
-	cells(b(star fmt(3)) se(par fmt(2))) drop(*gvkey 1*1.qtr 2*4.qtr 3*4.qtr 4*4.qtr ///
+esttab m1_dir m2_dir m3_dir m4_dir using "dirEffects.tex", se wide star(* 0.10 ** 0.05 *** 0.01) ///
+	drop(*gvkey 1*1.qtr 2*4.qtr 3*4.qtr 4*4.qtr ///
 	5*4.qtr 6*4.qtr 7*4.qtr 8.industry* 1.profit* 1.age* 1.size* *time) ///
 	order(excessheat90plusemp excessrainemp *tercile* *qtr* ) replace mtitles label 
 
+	
+*******************************************************************************
+* appendix tables: snow + hurricane
+quietly regress opIncNormdPerc c.excessrainemp i.industrygics#i.qtr i.time i.gvkey if !(((qtr == 4) | (qtr == 3)) & (state == "FL") | (state == "GA") | (state == "AL") | (state == "LA")), cluster(gvkey)
+estimates store m1_hurricane, title(Precip., No Hurricane Zones)
+margins, dydx(excessrainemp) post
+
+quietly regress opIncNormdPerc c.excessrainemp i.industrygics#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile if !(((qtr == 4) | (qtr == 3)) & (state == "FL") | (state == "GA") | (state == "AL") | (state == "LA")), cluster(gvkey)
+estimates store m2_hurricane, title(Precip., No Hurricane Zones, Addt'l Controls)
+margins, dydx(excessrainemp) post
+
+* not during the winter in one of the cold places !((weightedtempqtr < 5))
+quietly regress opIncNormdPerc c.excessrainemp i.industrygics#i.qtr i.time i.gvkey if !((weightedtempqtr < 10) & (qtr != 1)), cluster(gvkey)
+estimates store m3_snowWtdAvg, title(Precip., No Snow Zones)
+margins, dydx(excessrainemp) post
+
+quietly regress opIncNormdPerc c.excessrainemp i.industrygics#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile if !((weightedtempqtr < 10) & (qtr != 1)), cluster(gvkey)
+estimates store m4_snowWtdAvg, title(Precip., No Snow Zones, Addt'l Controls)
+margins, dydx(excessrainemp) post
 
 
+esttab m1_hurricane m2_hurricane m3_snowWtdAvg m4_snowWtdAvg using "dirEffects_robustness.tex", se wide star(* 0.10 ** 0.05 *** 0.01) ///
+	drop(*gvkey 1*1.qtr 2*4.qtr 3*4.qtr 4*4.qtr ///
+	5*4.qtr 6*4.qtr 7*4.qtr 8.industry* 1.profit* 1.age* 1.size* *time) ///
+	order(excessrainemp *tercile* *qtr* ) replace mtitles label 
+
+
+* in neither of those
+quietly regress opIncNormdPerc c.excessrainemp i.industrygics#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile if !(((qtr == 4) | (qtr == 3)) & (state == "FL") | (state == "GA") | (state == "AL") | (state == "LA")) & !((weightedtempqtr < 10) & (qtr != 1)), cluster(gvkey)
+estimates store m_snowPlusCane, title(Precip., No Snow and No Hurricane)
+margins, dydx(excessrainemp) post
+
+	
+	
 ********************
 * INDIR EFFECTS
 replace excessheat90plusemp = . if excessheat90plusemp == -500
@@ -94,101 +126,141 @@ label variable wtdsupplier_excessrainemp "Average Rain Across Suppliers"
 
 * do a bunch of tests here
 quietly regress opIncNormdPerc c.worstsupplier_excessheat90plusem i.industrygics#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile [pweight = pweights], cluster(gvkey)
-estimates store m1, title(Heat)
+estimates store m1, title(Heat, Supplier-Worst)
 margins, dydx(worstsupplier_excessheat90plus) post
 * outreg2 using regIndir.csv, replace ctitle("op inc heat - worst") label
 
-/* quietly regress opIncNormdPerc c.largestsupplier_excessheat90plus i.industrygics#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile [pweight = pweights], cluster(gvkey)
-margins, dydx(largestsupplier_excessheat90plus) post
-outreg2 using regIndir.csv, append ctitle("op inc heat - largest") label */ 
 
 quietly regress opIncNormdPerc c.wtdsupplier_excessheat90plusemp i.industrygics#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile [pweight = pweights], cluster(gvkey)
-estimates store m2, title(Heat, Additional Controls)
+estimates store m2, title(Heat, Supplier Avg.)
 margins, dydx(wtdsupplier_excessheat90plusemp) post
 * outreg2 using regIndir.csv, append ctitle("op inc heat - wtd") label
 
 
 *****
 quietly regress opIncNormdPerc c.worstsupplier_excessrainemp i.industrygics#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile [pweight = pweights], cluster(gvkey)
-estimates store m3, title(Precipitation)
+estimates store m3, title(Precipitation, Supplier-Worst)
 margins, dydx(worstsupplier_excessrainemp) post
-* outreg2 using regIndir.csv, append ctitle("op inc rain - worst") label
-
-/* quietly regress opIncNormdPerc c.largestsupplier_excessrainemp i.industrygics#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile [pweight = pweights], cluster(gvkey)
-margins, dydx(largestsupplier_excessrainemp) post
-outreg2 using regIndir.csv, append ctitle("op inc rain - largest") label */
 
 quietly regress opIncNormdPerc c.wtdsupplier_excessrainemp i.industrygics#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile [pweight = pweights], cluster(gvkey)
-estimates store m4, title(Precipitation, Additional Controls)
+estimates store m4, title(Precipitation, Supplier Avg.)
 margins, dydx(wtdsupplier_excessrainemp) post
 * outreg2 using regIndir.csv, replace
 * append ctitle("op inc rain - wtd") label
 
 
-esttab m1 m2 m3 m4 using "indirEffects.tex", star(* 0.10 ** 0.05 *** 0.01) ///
-	cells(b(star fmt(3)) se(par fmt(2))) drop(*gvkey 1*1.qtr 2*4.qtr 3*4.qtr 4*4.qtr ///
+esttab m1 m2 m3 m4 using "indirEffects.tex", se wide star(* 0.10 ** 0.05 *** 0.01) ///
+	drop(*gvkey 1*1.qtr 2*4.qtr 3*4.qtr 4*4.qtr ///
 	5*4.qtr 6*4.qtr 7*4.qtr 8.industry* 1.profit* 1.age* 1.size* *time) ///
 	order(worstsupplier_excessheat90plusem wtdsupplier_excessheat90plusemp worstsupplier_excessrainemp wtdsupplier_excessrainemp *tercile* *qtr* ) mtitles label replace
 
+	
+	
+************
+* check 500k
+* 500k 
+label variable worstsupplier500k_excessheat90pl "Worst Heat Across Suppliers >500km from Customer"
+label variable wtdsupplier500k_excessheat90plus "Average Heat Across Suppliers >500km from Customer"
+label variable worstsupplier500k_excessrainemp "Worst Rain Across Suppliers >500km from Customer"
+label variable wtdsupplier500k_excessrainemp "Average Rain Across Suppliers >500km from Customer"
 
+replace excessheat90plusemp = . if excessheat90plusemp == -500
+foreach v in excessheat90plusemp excessrainemp {
+	replace `v' = . if `v' == -500
+}
+
+replace excessheat90plusemp = . if excessheat90plusemp == -500
+foreach v in worstsupplier_excessheat90plusem largestsupplier_excessheat90plus wtdsupplier_excessheat90plusemp worstsupplier_excessrainemp largestsupplier_excessrainemp wtdsupplier_excessrainemp worstsupplier500k_excessheat90pl largestsupplier500k_excessheat90 wtdsupplier500k_excessheat90plus worstsupplier500k_excessrainemp largestsupplier500k_excessrainem wtdsupplier500k_excessrainemp {
+	replace `v' = . if `v' == -500
+}
+	
+
+quietly regress opIncNormdPerc c.wtdsupplier500k_excessheat90plus i.industrygics#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile [pweight = pweights], cluster(gvkey)
+estimates store m1, title(Heat, Supplier Average)
+margins, dydx(wtdsupplier500k_excessheat90plus) post
+
+quietly regress opIncNormdPerc c.worstsupplier500k_excessheat90pl i.industrygics#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile [pweight = pweights], cluster(gvkey)
+estimates store m2, title(Heat, Supplier-Worst)
+margins, dydx(worstsupplier500k_excessheat90pl) post
+
+quietly regress opIncNormdPerc c.wtdsupplier500k_excessrainemp i.industrygics#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile [pweight = pweights], cluster(gvkey)
+estimates store m3, title(Precipitation, Supplier Average)
+margins, dydx(wtdsupplier500k_excessrainemp) post
+
+quietly regress opIncNormdPerc c.worstsupplier500k_excessrainemp i.industrygics#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile [pweight = pweights], cluster(gvkey)
+estimates store m4, title(Precipitation, Supplier-Worst)
+margins, dydx(worstsupplier500k_excessrainemp) post
+
+
+esttab m2 m4 using "indirEffects_robustness.tex", se wide star(* 0.10 ** 0.05 *** 0.01) ///
+	drop(*gvkey 1*1.qtr 2*4.qtr 3*4.qtr 4*4.qtr ///
+	5*4.qtr 6*4.qtr 7*4.qtr 8.industry* 1.profit* 1.age* 1.size* *time) ///
+	order(worstsupplier500k_excessheat90pl worstsupplier500k_excessrainemp *tercile* *qtr* ) mtitles label replace
+
+	
+hist excessheat90plusemp
+	
+	
 **********************************
 * ROBUSTNESS CHECKS 1: LOG
 * DIR EFFECTS
-quietly regress opIncNormdPerc c.excessheat90plusemp i.industrygics#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
-estimates store m1_log, title(Heat, Direct Effect)
+quietly regress lnopincnormdaf_take2 c.excessheat90plusemp i.industrygics#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
+estimates store m1_log, title(Heat, Direct)
 margins, dydx(excessheat90plusemp) post
 
 
-quietly regress opIncNormdPerc c.excessrainemp i.industrygics#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
-estimates store m2_log, title(Precipitation, Direct Effect)
+quietly regress lnopincnormdaf_take2 c.excessrainemp i.industrygics#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
+estimates store m2_log, title(Precipitation, Direct)
 margins, dydx(excessrainemp) post
 
 
-quietly regress opIncNormdPerc c.worstsupplier_excessheat90plusem i.industrygics#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile [pweight = pweights], cluster(gvkey)
+quietly regress lnopincnormdaf_take2 c.worstsupplier_excessheat90plusem i.industrygics#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile [pweight = pweights], cluster(gvkey)
 estimates store m3_log, title(Heat, Indirect Effect)
 margins, dydx(worstsupplier_excessheat90plus) post
 
 
-quietly regress opIncNormdPerc c.worstsupplier_excessrainemp i.industrygics#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile [pweight = pweights], cluster(gvkey)
+quietly regress lnopincnormdaf_take2 c.worstsupplier_excessrainemp i.industrygics#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile [pweight = pweights], cluster(gvkey)
 estimates store m4_log, title(Precipitation, Indirect Effect)
 margins, dydx(worstsupplier_excessrainemp) post
 
-esttab m1_log m2_log m3_log m4_log using "logEffects.tex", star(* 0.10 ** 0.05 *** 0.01) ///
-	cells(b(star fmt(3)) se(par fmt(2))) drop(*gvkey 1*1.qtr 2*4.qtr 3*4.qtr 4*4.qtr ///
+esttab m1_log m2_log m3_log m4_log using "logEffects.tex", se wide star(* 0.10 ** 0.05 *** 0.01) ///
+	drop(*gvkey 1*1.qtr 2*4.qtr 3*4.qtr 4*4.qtr ///
 	5*4.qtr 6*4.qtr 7*4.qtr 8.industry* 1.profit* 1.age* 1.size* *time) ///
 	order(excessheat90plusemp excessrainemp worstsupplier_excessheat90plus worstsupplier_excessrainemp *tercile* *qtr* ) mtitles label replace
-
-
-* 
-
 
 
 **********************************
 * ROBUSTNESS CHECKS 2: HQs
 * DIR EFFECTS
-quietly regress opIncNormdPerc c.excessheat90plus i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
+quietly regress opIncNormdPerc c.excessheat90plus i.industrygics#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
 estimates store m1_hq, title(Heat, Direct Effect)
 margins, dydx(excessheat90plus) post
 
 
-quietly regress opIncNormdPerc c.excessrain i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
-estimates store m2_hq, title(Precipitation, Direct Effect)
+quietly regress opIncNormdPerc c.excessrain i.industrygics#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
+estimates store m2_hq, title(Precip., Direct Effect)
 margins, dydx(excessrain) post
 
 
-quietly regress opIncNormdPerc c.worstsupplier_excessheat90plus i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile [pweight = pweights], cluster(gvkey)
+
+quietly regress opIncNormdPerc c.worstsupplier_excessheat90plus i.industrygics#i.qtr i.time i.time i.gvkey i.agetercile i.profittercile i.sizetercile [pweight = pweights], cluster(gvkey)
 estimates store m3_hq, title(Heat, Indirect Effect)
 margins, dydx(worstsupplier_excessheat90plus) post
 
-quietly regress opIncNormdPerc c.worstsupplier_excessrain i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile [pweight = pweights], cluster(gvkey)
-estimates store m4_hq, title(Precipitation, Indirect Effect)
+
+quietly regress opIncNormdPerc c.worstsupplier_excessrain i.industrygics#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile [pweight = pweights], cluster(gvkey)
+estimates store m4_hq, title(Precip., Indirect Effect)
 margins, dydx(worstsupplier_excessrain) post
 
-esttab m1_log m2_log m3_log m4_log using "hqEffects.tex", star(* 0.10 ** 0.05 *** 0.01) ///
-	cells(b(star fmt(3)) se(par fmt(2))) drop(*gvkey 1*1.qtr 2*4.qtr 3*4.qtr 4*4.qtr ///
+esttab m1_hq m2_hq m3_hq m4_hq using "hqEffects.tex", se wide star(* 0.10 ** 0.05 *** 0.01) ///
+	drop(*gvkey 1*1.qtr 2*4.qtr 3*4.qtr 4*4.qtr ///
 	5*4.qtr 6*4.qtr 7*4.qtr 8.industry* 1.profit* 1.age* 1.size* *time) ///
 	order(excessheat90plus excessrain worstsupplier_excessheat90plus worstsupplier_excessrain *tercile* *qtr* ) mtitles label replace
 
+	
+
+	
+	
 
 
 **********************************

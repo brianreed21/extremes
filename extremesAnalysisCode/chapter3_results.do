@@ -49,7 +49,7 @@ local quarterly      heatanomalyquarterly_wtd extremeheatquarterly_wtd precipano
 local allWeather `mainSpec' `otherDailyHeat' `otherDailyRain' `quarterly'
 
 foreach var of local allWeather {
-	quietly regress opIncNormdPerc c.`var' i.industry#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
+	quietly regress opIncNormdPerc c.`var' i.industrygics#i.qtr i.time i.gvkey i.agetercile i.profittercile i.sizetercile, cluster(gvkey)
 	margins, dydx(`var') post
 	outreg2 using ch3_weatherTypes.xls, append ctitle("`var'") label
 }
